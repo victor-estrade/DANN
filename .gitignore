@@ -60,3 +60,16 @@ target/
 
 #Ipython Notebook
 .ipynb_checkpoints
+
+# Data
+data/
+
+# Logs
+log/
+
+# Figures
+fig/
+
+# Notes & TODO
+Notes/
+TODO.txt
