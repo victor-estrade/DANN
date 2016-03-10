@@ -15,11 +15,11 @@ import matplotlib.pyplot as plt
 # import sklearn
 from scipy import misc
 
-
 __author__ = 'Estrade Victor'
 
 bsr = 'data/BSR/BSDS500/data/images/train/*.jpg'
 bsr = glob(bsr)
+np.random.seed(12345)
 
 
 def to_rgb(im):
@@ -28,12 +28,11 @@ def to_rgb(im):
     return ret
 
 
-def patch(random_state=12345):
-    rng = np.random.RandomState(random_state)
-    c = rng.randint(len(bsr))
+def patch():
+    c = np.random.randint(len(bsr))
     img = misc.imread(bsr[c])/255
-    i = rng.randint(img.shape[0]-28)
-    j = rng.randint(img.shape[1]-28)
+    i = np.random.randint(img.shape[0]-28)
+    j = np.random.randint(img.shape[1]-28)
     extract = np.asarray(img[i:i+28, j:j+28, :])
     return extract
 
@@ -50,28 +49,41 @@ def mnist_blend(data):
     new = new.reshape(new.shape[0], -1)
     return data, new
 
-if __name__ == '__main__':
-    print('I am at your service, master.')
+
+def load_mnist():
     f = gzip.open('data/mnist.pkl.gz', 'rb')
     train_S, valid_S, test_S = pickle.load(f)
     f.close()
+    return train_S, valid_S, test_S
 
-    X, y = train_S
-    
-    X, new_X = mnist_blend(X)
-    
-    i = np.random.randint(X.shape[0])
 
-    plt.imshow(X[i].reshape(28, 28, 3))
-    plt.title('AVANT-'+str(y[i]))
+def load_mnistM(shape=(-1, 28, 28, 3)):
+    source = load_mnist()
+    train_S, valid_S, test_S = source
+    data = tuple((mnist_blend(X) + (y,) for X, y in source))
+    target = tuple(((d[1].reshape(shape), d[2]) for d in data))
+    source = tuple(((d[0].reshape(shape), d[2]) for d in data))
+    return source, target
+
+
+if __name__ == '__main__':
+    print('I am at your service, master.')
+    source, target = load_mnistM()
+    train_S, val_S, test_S = source
+    train_T, val_T, test_T = target
+    X_S, y_S = train_S
+    X_T, y_T = train_T
+
+    i = np.random.randint(X_S.shape[0])
+
+    plt.imshow(X_S[i])
+    plt.title('AVANT-'+str(y_S[i]))
     plt.show()
-    plt.imshow(new_X[i].reshape(28, 28, 3))
-    plt.title('APRES-'+str(y[i]))
+    plt.imshow(X_T[i])
+    plt.title('APRES-'+str(y_T[i]))
     plt.show()
 
-    X = X.reshape(X.shape[0], -1)
-    new_X = new_X.reshape(new_X.shape[0], -1)
-
+    
     # SAVE DATA
     # if not os.path.isdir('data/train/'):
     #     os.mkdir('data/train/')

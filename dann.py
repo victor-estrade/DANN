@@ -52,6 +52,8 @@ class ReverseGradientLayer(lasagne.layers.Layer):
     def get_output_for(self, input, **kwargs):
         return self.op(input)
 
+# BUILD FACTORY :
+factory_dict = {}
 
 def build_cnn(input_var=None):
     # As a third model, we'll create a CNN of two convolution + pooling stages
@@ -102,7 +104,8 @@ def build_cnn(input_var=None):
             )
 
     return network
-
+# Add this builder to the factory
+factory_dict['cnn'] = build_cnn
 
 def build_dann(input_var=None, hp_lambda=0.5):
     # As a third model, we'll create a CNN of two convolution + pooling stages
@@ -153,14 +156,23 @@ def build_dann(input_var=None, hp_lambda=0.5):
             )
 
     # Domain classifier
+    dense_domain = lasagne.layers.DenseLayer(
+            ReverseGradientLayer(pool2, hp_lambda=hp_lambda),
+            num_units=100,
+            nonlinearity=lasagne.nonlinearities.rectify,
+            # W=lasagne.init.GlorotUniform(),
+            )
+
     domain_predictor = lasagne.layers.DenseLayer(
-            ReverseGradientLayer(feature, hp_lambda=hp_lambda),
+            dense_domain,
             num_units=2,
             nonlinearity=lasagne.nonlinearities.softmax,
             # W=lasagne.init.GlorotUniform(),
             )
 
     return label_predictor, domain_predictor
+# Add this builder to the factory
+factory_dict['dann'] = build_dann
 
 
 def build_small_dann(input_var=None, hp_lambda=0.5):
@@ -219,14 +231,37 @@ def build_small_dann(input_var=None, hp_lambda=0.5):
             # W=lasagne.init.GlorotUniform(),
             )
     domain_predictor = lasagne.layers.DenseLayer(
-            domain_hidden,
+            ReverseGradientLayer(feature, hp_lambda=hp_lambda),
+            # domain_hidden,
             num_units=2,
             nonlinearity=lasagne.nonlinearities.softmax,
             # W=lasagne.init.GlorotUniform(),
             )
 
     return label_predictor, domain_predictor
+# Add this builder to the factory
+factory_dict['small'] = build_small_dann
 
+
+def build_factory(name='dann', **kwargs):
+    """
+    Helper function to build pre-set theano neural networks graph
+
+    Params
+    ------
+        name: the name of the neural network / builder function. (string)
+        **kwargs: other key word arguments can be passed to the builder 
+            function.
+    Return
+    ------
+        the datasets
+    """
+    if name in factory_dict:
+        return factory_dict[name](**kwargs)
+    else:
+        raise NotImplementedError(
+            "This neural network ({}) is not implemented yet. "
+            "Please check the model name spelling.".format(name))
 
 
 # ############################# Batch iterator ###############################
@@ -239,6 +274,20 @@ def build_small_dann(input_var=None, hp_lambda=0.5):
 # several changes in the main program, though, and is not demonstrated here.
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
+    """
+    Helper function interating over the given inputs
+
+    Params
+    ------
+        inputs: the data (numpy array)
+        targets: the target values (numpy array)
+        batchsize: the batch size (int)
+        shuffle (default=False):
+    
+    Return
+    ------
+        (input_slice, target_slice) as a generator
+    """
     assert len(inputs) == len(targets)
     if shuffle:
         indices = np.arange(len(inputs))
@@ -251,254 +300,53 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         yield inputs[excerpt], targets[excerpt]
 
 
-def main(model='cnn', num_epochs=500, hp_lambda=0.1, invert=False, logger=None):
-    if logger is None:
-        logger  = new_logger()
-    # Load the dataset
-    logger.info("Loading data...")
-    with gzip.open('data/mnist.pkl.gz', 'rb') as f:
-        train_S, valid_S, test_S = pickle.load(f)
+def test(predict_fun, X, y, logger=None, batchsize=500):
+    """
+    Test the model using the given predict function on minibacth.
+    Return the statistics.
 
-    X_train_source, y_train = train_S
-    X_train_source, X_train_target = mnist_blend(X_train_source)
-    X_train_source = X_train_source.reshape(-1, 3, 28, 28)
-    X_train_target = X_train_target.reshape(-1, 3, 28, 28)
+    Params
+    ------
+        predict_fun: the predict function. Should take minibatch from X and y
+            and return a loss value and an accuracy value :
+            >>> loss, accuracy =  predict_fun(X, y)
+        X: the input data
+        y: the target value
+        logger (default=None): used to output some information
+        batchsize (default=500): the size on the minibatches
 
-    X_val_source, y_val = valid_S
-    X_val_source, X_val_target = mnist_blend(X_val_source)
-    X_val_source = X_val_source.reshape(-1, 3, 28, 28)
-    X_val_target = X_val_target.reshape(-1, 3, 28, 28)
-
-    X_test_source, y_test = test_S
-    X_test_source, X_test_target = mnist_blend(X_test_source)
-    X_test_source = X_test_source.reshape(-1, 3, 28, 28)
-    X_test_target = X_test_target.reshape(-1, 3, 28, 28)
-
-    # Invert target and source
-    if invert:
-        X_train_source, X_train_target = X_train_target, X_train_source
-        X_val_source, X_val_target = X_val_target, X_val_source
-        X_test_source, X_test_target = X_test_target, X_test_source
-
-
-    # Prepare Theano variables for inputs and targets
-    input_var = T.tensor4('inputs')
-    target_var = T.ivector('targets')
-
-    # Create neural network model (depending on first command line parameter)
-    logger.info("Building model...")
-    if model == 'dann':
-        label_predictor, domain_predictor = build_dann(input_var, hp_lambda=hp_lambda)
-        logger.info('hp_lambda: {}'.format(hp_lambda))
-    elif model == 'cnn':
-        label_predictor = build_cnn(input_var)
-        domain_predictor = None
-    elif model == 'small':
-        label_predictor, domain_predictor = build_small_dann(input_var, hp_lambda=hp_lambda)
-        logger.info('hp_lambda: {}'.format(hp_lambda))
-    else:
-        logger.error("Unrecognized model type {}.".format(model))
-        return
-
-    # Create a loss expression for training, i.e., a scalar objective we want
-    # to minimize (for our multi-class problem, it is the cross-entropy loss):
-    label_prediction = lasagne.layers.get_output(label_predictor)
-    label_loss = lasagne.objectives.categorical_crossentropy(label_prediction, target_var)
-    label_loss = label_loss.mean()
-    # We could add some weight decay as well here, see lasagne.regularization.
-
-    # Create update expressions for training, i.e., how to modify the
-    # parameters at each training step. Here, we'll use Stochastic Gradient
-    # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    label_params = lasagne.layers.get_all_params(label_predictor, trainable=True)
-    label_updates = lasagne.updates.nesterov_momentum(
-            label_loss, label_params, learning_rate=0.01, momentum=0.9)
-
-    # Create a loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the network,
-    # disabling dropout layers.
-    test_prediction = lasagne.layers.get_output(label_predictor, deterministic=True)
-    test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
-                                                            target_var)
-    test_loss = test_loss.mean()
-    # As a bonus, also create an expression for the classification accuracy:
-    test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
-                      dtype=theano.config.floatX)
-
-    logger.info("Compiling functions...")
-    # Compile a function performing a training step on a mini-batch (by giving
-    # the updates dictionary) and returning the corresponding training loss:
-    train_fn = theano.function([input_var, target_var], label_loss, updates=label_updates,
-                               allow_input_downcast=True)
-
-    # Compile a second function computing the validation loss and accuracy:
-    val_fn = theano.function([input_var, target_var], [test_loss, test_acc],
-                             allow_input_downcast=True)
-
-    if domain_predictor is not None:
-        # Compile the domain aversial part of the network for trainning as 
-        # adversial_fn
-        logger.info("Compiling functions (domain adversial)...")
-        
-        # Create a loss expression for training, i.e., a scalar objective we want
-        # to minimize (for our multi-class problem, it is the cross-entropy loss):
-        domain_prediction = lasagne.layers.get_output(domain_predictor)
-        domain_loss = lasagne.objectives.categorical_crossentropy(domain_prediction, target_var)
-        domain_loss = domain_loss.mean()
-        # We could add some weight decay as well here, see lasagne.regularization.
-
-        # Create update expressions for training, i.e., how to modify the
-        # parameters at each training step. Here, we'll use Stochastic Gradient
-        # Descent (SGD).
-        domain_params = lasagne.layers.get_all_params(domain_predictor, trainable=True)
-        # domain_updates = lasagne.updates.nesterov_momentum(
-        #         domain_loss, domain_params, learning_rate=0.01, momentum=0.9)
-        domain_updates = lasagne.updates.sgd(domain_loss, domain_params, learning_rate=0.01)
-        domain_acc = T.mean(T.eq(T.argmax(domain_prediction, axis=1), target_var),
-                      dtype=theano.config.floatX)
-        # Compile a function performing a training step on a mini-batch (by giving
-        # the updates dictionary) and returning the corresponding training loss:
-        adversial_fn = theano.function([input_var, target_var], [domain_loss, domain_acc],
-                                        updates=domain_updates,
-                                        allow_input_downcast=True)
-
-    # Finally, launch the training loop.
-    logger.info("Starting training...")
-    # Dictionnary saving the statistics
-    stats = {}
-    stats['source_val_acc'] = []
-    stats['target_val_acc'] = []
-    stats['source_val_loss'] = []
-    stats['target_val_loss'] = []
-    # We iterate over epochs:
-    for epoch in range(num_epochs):
-        # In each epoch, we do a full pass over the training data:
-        train_err = 0
-        train_domain_acc = 0
-        train_domain_loss = 0
-        train_batches = 0
-        start_time = time.time()
-        if domain_predictor is None:
-            for batch in iterate_minibatches(X_train_source, y_train, 500, shuffle=True):
-                inputs, targets = batch
-                train_err += train_fn(inputs, targets)
-                train_batches += 1
-        else:
-            for source_batch, target_batch in zip(iterate_minibatches(X_train_source, y_train, 500, shuffle=True),
-                            iterate_minibatches(X_train_target, y_train, 500, shuffle=True)):
-                X_source, y_source = source_batch
-                train_err += train_fn(X_source, y_source)
-                train_batches += 1
-                X_target, y_target = target_batch
-                X = np.vstack([X_source, X_target])
-                y = np.hstack([np.zeros_like(y_source, dtype=np.int32), 
-                               np.ones_like(y_target, dtype=np.int32)])
-                train_domain_loss, train_domain_acc = adversial_fn(X, y)
-
-        # And a full pass over the validation data:
-        val_err_source = 0
-        val_acc_source = 0
-        val_batches_source = 0
-        for batch in iterate_minibatches(X_val_source, y_val, 500, shuffle=False):
-            inputs, targets = batch
-            err, acc = val_fn(inputs, targets)
-            val_err_source += err
-            val_acc_source += acc
-            val_batches_source += 1
-        
-        val_err_target = 0
-        val_acc_target = 0
-        val_batches_target = 0
-        for batch in iterate_minibatches(X_val_target, y_val, 500, shuffle=False):
-            inputs, targets = batch
-            err, acc = val_fn(inputs, targets)
-            val_err_target += err
-            val_acc_target += acc
-            val_batches_target += 1
-
-        # Then we print the results for this epoch:
-        logger.info("Epoch {} of {} took {:.3f}s".format(
-            epoch + 1, num_epochs, time.time() - start_time))
-        logger.info("  {:30}: {:.6f}".format('training loss',
-            train_err / train_batches))
-        logger.info("  {:30}: {:.6f}".format('training domain loss',
-            train_domain_loss / train_batches))
-        logger.info("  {:30}: {:.2f} %".format('training domain acc',
-            train_domain_acc / train_batches *100))
-        logger.info("  {:30}: {:.6f}".format('source validation loss',
-            val_err_source / val_batches_source))
-        logger.info("  {:30}: {:.2f} %".format('source validation accuracy',
-            val_acc_source / val_batches_source * 100))
-        logger.info("  {:30}: {:.6f}".format('target validation loss',
-            val_err_target / val_batches_target))
-        logger.info("  {:30}: {:.2f} %".format('target validation accuracy',
-            val_acc_target / val_batches_target * 100))
-        # And saving them:
-        stats['source_val_loss'].append(val_err_source / val_batches_source)
-        stats['source_val_acc'].append(val_acc_source / val_batches_source * 100)
-        stats['target_val_loss'].append(val_err_target / val_batches_target)
-        stats['target_val_acc'].append(val_acc_target / val_batches_target * 100)
-
+    Return
+    ------
+        stats: a dictionnary with 'loss' and 'acc'
+    """
     # After training, we compute and print the test error:
-    test_err_source = 0
-    test_acc_source = 0
-    test_batches_source = 0
-    for batch in iterate_minibatches(X_test_source, y_test, 500, shuffle=False):
+    stats = {}
+    test_err = 0
+    test_acc = 0
+    test_batches = 0
+    for batch in iterate_minibatches(X, y, batchsize, shuffle=False):
         inputs, targets = batch
-        err, acc = val_fn(inputs, targets)
-        test_err_source += err
-        test_acc_source += acc
-        test_batches_source += 1
+        err, acc = predict_fun(inputs, targets)
+        test_err += err
+        test_acc += acc
+        test_batches += 1
 
-    test_err_target = 0
-    test_acc_target = 0
-    test_batches_target = 0
-    for batch in iterate_minibatches(X_test_target, y_test, 500, shuffle=False):
-        inputs, targets = batch
-        err, acc = val_fn(inputs, targets)
-        test_err_target += err
-        test_acc_target += acc
-        test_batches_target += 1
-        
-    logger.info("Final results:")
-    logger.info("  {:30}: {:.6f}".format('source test loss',
-        test_err_source / test_batches_source))
-    logger.info("  {:30}: {:.2f} %".format('source test accuracy',
-        test_acc_source / test_batches_source * 100))
-    logger.info("  {:30}: {:.6f}".format('target test loss',
-        test_err_target / test_batches_target))
-    logger.info("  {:30}: {:.2f} %".format('target test accuracy',
-        test_acc_target / test_batches_target * 100))
+    if logger:
+        logger.info("  {:30}: {:.6f}".format('source test loss',
+            test_err / test_batches))
+        logger.info("  {:30}: {:.2f} %".format('source test accuracy',
+            test_acc / test_batches * 100))
 
     # And saving them:
-    stats['source_test_loss'] = val_err_source / val_batches_source
-    stats['source_test_acc'] = val_acc_source / val_batches_source * 100
-    stats['target_test_loss'] = val_err_target / val_batches_target
-    stats['target_test_acc'] = val_acc_target / val_batches_target * 100
-        
-    # Optionally, you could now dump the network weights to a file like this:
-    # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
-    #
-    # And load them again later on like this:
-    # with np.load('model.npz') as f:
-    #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-    # lasagne.layers.set_all_param_values(network, param_values)
-
+    stats['loss'] = test_err / test_batches
+    stats['acc'] = test_acc / test_batches * 100
     return stats
 
-if __name__ == '__main__':
-    
-    hp_lambda = 0.2
-    model = 'small'
-    stats = main(model=model, num_epochs=50, hp_lambda=hp_lambda, 
-                 invert=False)
 
-    plt.plot(stats['source_val_acc'], label='source')
-    plt.plot(stats['target_val_acc'], label='target')
-    plt.xlabel('epoch')
-    plt.ylabel('accuracy (%)')
-    # plt.plot(stats['source_loss'])
-    # plt.plot(stats['target_loss'])
-    plt.legend()
-    title = 'S-T-{}-lambda-{:3f}'.format(model, hp_lambda)
-    plt.savefig('fig/'+title+'.png')
+if __name__ == '__main__':
+    g = build_factory('cnn')
+    print(type(g))
+    g = build_factory('small')
+    print(type(g))
+    print(type(g) is tuple)
+    g = build_factory('sm')
