@@ -331,15 +331,17 @@ def test(predict_fun, X, y, logger=None, batchsize=500):
         test_acc += acc
         test_batches += 1
 
+    test_err /= test_batches
+    test_acc = test_acc / test_batches * 100
     if logger:
         logger.info("  {:30}: {:.6f}".format('source test loss',
-            test_err / test_batches))
+            test_err))
         logger.info("  {:30}: {:.2f} %".format('source test accuracy',
-            test_acc / test_batches * 100))
+            test_acc))
 
     # And saving them:
-    stats['loss'] = test_err / test_batches
-    stats['acc'] = test_acc / test_batches * 100
+    stats['loss'] = test_err
+    stats['acc'] = test_acc
     return stats
 
 

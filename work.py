@@ -159,6 +159,16 @@ def main(model='cnn', num_epochs=500, hp_lambda=0.1, invert=False, logger=None):
                 train_domain_loss, train_domain_acc = adversial_fn(X, y)
 
         # And a full pass over the validation data:
+        s = dann.test(val_fn, X_val_source, y_val)
+        stats['source_val_loss'].append(s['loss'])
+        stats['source_val_acc'].append(s['acc'])
+        
+        s = dann.test(val_fn, X_val_target, y_val)
+        stats['target_val_loss'].append(s['loss'])
+        stats['target_val_acc'].append(s['acc'])
+
+        # Put the statistics and mesures in the log.
+        # Trainning logs
         logger.info("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - start_time))
         logger.info("  {:30}: {:.6f}".format('training loss',
@@ -167,24 +177,35 @@ def main(model='cnn', num_epochs=500, hp_lambda=0.1, invert=False, logger=None):
             train_domain_loss / train_batches))
         logger.info("  {:30}: {:.2f} %".format('training domain acc',
             train_domain_acc / train_batches *100))
-
-        s = dann.test(val_fn, X_val_source, y_val, logger=logger)
-        stats['source_val_loss'].append(s['loss'])
-        stats['source_val_acc'].append(s['acc'])
-        
-        s = dann.test(val_fn, X_val_target, y_val, logger=logger)
-        stats['target_val_loss'].append(s['loss'])
-        stats['target_val_acc'].append(s['acc'])
+        # Validation logs
+        logger.info("  {:30}: {:.6f}".format('source val loss',
+            stats['source_val_loss'][-1]))
+        logger.info("  {:30}: {:.2f} %".format('source val accuracy',
+            stats['source_val_acc'][-1]))
+        logger.info("  {:30}: {:.6f}".format('target val loss',
+            stats['target_val_loss'][-1]))
+        logger.info("  {:30}: {:.2f} %".format('target val accuracy',
+            stats['target_val_loss'][-1]))
 
     # After training, we compute and print the test error:
     logger.info("Final results:")
-    s = dann.test(val_fn, X_test_source, y_test, logger=logger)
+    s = dann.test(val_fn, X_test_source, y_test)
     stats['source_test_loss'] = s['loss']
     stats['source_test_acc'] = s['acc']
     
-    s = dann.test(val_fn, X_test_target, y_test, logger=logger)
+    s = dann.test(val_fn, X_test_target, y_test)
     stats['target_test_loss'] = s['loss']
     stats['target_test_acc'] = s['acc']
+
+    # Test logs
+    logger.info("  {:30}: {:.6f}".format('source test loss',
+        stats['source_test_loss']))
+    logger.info("  {:30}: {:.2f} %".format('source test accuracy',
+        stats['source_test_acc']))
+    logger.info("  {:30}: {:.6f}".format('target test loss',
+        stats['target_test_loss']))
+    logger.info("  {:30}: {:.2f} %".format('target test accuracy',
+        stats['target_test_loss']))
         
     # Optionally, you could now dump the network weights to a file like this:
     # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
