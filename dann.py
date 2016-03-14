@@ -24,12 +24,12 @@ from logs import log_fname, new_logger
 factory_dict = {}
 
 
-def build_cnn(input_var=None):
+def build_cnn(input_var=None, shape=(None, 3, 28, 28)):
     # As a third model, we'll create a CNN of two convolution + pooling stages
     # and a fully-connected hidden layer in front of the output layer.
 
     # Input layer, as usual:
-    input_layer = lasagne.layers.InputLayer(shape=(None, 3, 28, 28),
+    input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
     # This time we do not apply input dropout, as it tends to work less well
     # for convolutional layers.
@@ -77,12 +77,12 @@ def build_cnn(input_var=None):
 factory_dict['cnn'] = build_cnn
 
 
-def build_dann(input_var=None, hp_lambda=0.5):
+def build_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
     # As a third model, we'll create a CNN of two convolution + pooling stages
     # and a fully-connected hidden layer in front of the output layer.
 
     # Input layer, as usual:
-    input_layer = lasagne.layers.InputLayer(shape=(None, 3, 28, 28),
+    input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
     # This time we do not apply input dropout, as it tends to work less well
     # for convolutional layers.
@@ -143,12 +143,12 @@ def build_dann(input_var=None, hp_lambda=0.5):
 factory_dict['dann'] = build_dann
 
 
-def build_small_dann(input_var=None, hp_lambda=0.5):
+def build_small_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
     # As a third model, we'll create a CNN of two convolution + pooling stages
     # and a fully-connected hidden layer in front of the output layer.
 
     # Input layer, as usual:
-    input_layer = lasagne.layers.InputLayer(shape=(None, 3, 28, 28),
+    input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
 
     # A fully-connected layer of 256 units
