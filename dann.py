@@ -158,12 +158,12 @@ def build_small_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
             nonlinearity=lasagne.nonlinearities.sigmoid,
             W=lasagne.init.GlorotUniform(),
             )
-    # feature = lasagne.layers.DenseLayer(
-    #         feature,
-    #         num_units=256,
-    #         nonlinearity=lasagne.nonlinearities.sigmoid,
-    #         W=lasagne.init.GlorotUniform(),
-    #         )
+    feature = lasagne.layers.DenseLayer(
+            feature,
+            num_units=128,
+            nonlinearity=lasagne.nonlinearities.sigmoid,
+            W=lasagne.init.GlorotUniform(),
+            )
 
     # Reversal gradient layer
     RGL = ReverseGradientLayer(feature, hp_lambda=hp_lambda)
@@ -183,12 +183,12 @@ def build_small_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
             )
 
     # Domain classifier
-    domain_hidden = lasagne.layers.DenseLayer(
-            RGL,
-            num_units=50,
-            nonlinearity=lasagne.nonlinearities.sigmoid,
-            W=lasagne.init.GlorotUniform(),
-            )
+    # domain_hidden = lasagne.layers.DenseLayer(
+    #         RGL,
+    #         num_units=50,
+    #         nonlinearity=lasagne.nonlinearities.sigmoid,
+    #         W=lasagne.init.GlorotUniform(),
+    #         )
     domain_predictor = lasagne.layers.DenseLayer(
             RGL,
             # domain_hidden,

@@ -30,7 +30,8 @@ __author__ = 'Estrade Victor'
 ##############################################################################
 ##############################################################################
 class Path(object):
-    def __init__(self, nn, compiler, input_var=None, target_var=None, name='', batchsize=500):
+    def __init__(self, nn, compiler, input_var=None, target_var=None, name='',
+                batchsize=500, trainable=True):
         """Path class is a helper class to handle the training proscess.
 
         Params
@@ -50,12 +51,16 @@ class Path(object):
         self.input_var = input_var
         self.target_var = target_var
         self.name = name
+        self.trainable = trainable
         self.batchsize = batchsize
 
         self.train_loss = []
         self.train_acc = []
         self.epoch = 0
-        self.train_stats = {'loss':[], 'acc':[]}
+        if trainable:
+            self.train_stats = {'loss':[], 'acc':[]}
+        else:
+            self.train_stats = {}
         self.val_loss = []
         self.val_acc = []
         self.val_stats = {'loss':[], 'acc':[]}
@@ -78,10 +83,10 @@ class Path(object):
         # print('Path training batch shape:', X.shape, y.shape)
         # a = self.train_fn(X, y)
         # print('Path training a:', a)
-
-        loss, acc = self.train_fn(X, y)
-        self.train_loss.append(loss)
-        self.train_acc.append(acc)
+        if self.trainable:
+            loss, acc = self.train_fn(X, y)
+            self.train_loss.append(loss)
+            self.train_acc.append(acc)
 
     def val(self, X, y):
         """Do one validation iteration over the given minibatch data.
@@ -93,10 +98,11 @@ class Path(object):
     def end_epoch(self):
         """End a epoch, computes the statistics of this epoch
         """
-        self.train_stats['loss'].append(np.mean(self.train_loss))
-        self.train_loss = []
-        self.train_stats['acc'].append(np.mean(self.train_acc))
-        self.train_acc = []
+        if self.trainable:
+            self.train_stats['loss'].append(np.mean(self.train_loss))
+            self.train_loss = []
+            self.train_stats['acc'].append(np.mean(self.train_acc))
+            self.train_acc = []
         self.val_stats['loss'].append(np.mean(self.val_loss))
         self.val_loss = []
         self.val_stats['acc'].append(np.mean(self.val_acc))
@@ -243,8 +249,6 @@ if __name__ == '__main__':
     X_r_train, X_r_val, X_r_test = X_r[0:3000], X_r[3000:4000], X_r[4000:]
     y_r_train, y_r_val, y_r_test = y[0:3000], y[3000:4000], y[4000:]
     
-    data = ((X_train, y_train), (X_val, y_val), (X_test, y_test))
-    data_r = ((X_r_train, y_r_train), (X_r_val, y_r_val), (X_r_test, y_r_test))
     source_data = {
                     'X_train': X_train,
                     'y_train': y_train,
@@ -252,6 +256,16 @@ if __name__ == '__main__':
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
+                    'batchsize':100,
+                    }
+
+    target_data = {
+                    'X_train': X_r_train,
+                    'y_train': y_r_train,
+                    'X_val': X_r_val,
+                    'y_val': y_r_val,
+                    'X_test': X_r_test,
+                    'y_test': y_r_test,
                     'batchsize':100,
                     }
 
@@ -268,16 +282,26 @@ if __name__ == '__main__':
                     'batchsize':200,
                     }
     # Prepare Theano variables for inputs and targets
+    # input_var = T.tensor4('inputs')
     input_var = T.matrix('inputs')
     target_var = T.ivector('targets')
 
+    # Build the neural network architecture
+    hp_lambda = 0.
     label_nn, domain_nn = dann.build_factory('small', input_var=input_var, 
-                                             shape=(None, X_train.shape[1]))
-    datas = [source_data, domain_data]
-    pathes = [Path(label_nn, compile_sgd, input_var=input_var,
+                                             shape=(None, X_train.shape[1]),
+                                             hp_lambda=hp_lambda)
+    # Gather the data in the right order
+    datas = [source_data, domain_data, target_data]
+    # Build the pathes to prepare the training
+    pathes = [
+             Path(label_nn, compile_sgd, input_var=input_var,
                     target_var=target_var, name='source'),
              Path(domain_nn, compile_sgd, input_var=input_var,
-                    target_var=target_var, name='target'),
+                    target_var=target_var, name='domain'),
+             Path(label_nn, compile_sgd, input_var=input_var,
+                    target_var=target_var, name='target', trainable=False),
              ]
 
-    training(datas, pathes, num_epochs=5)
+    # Train the NN
+    training(datas, pathes, num_epochs=100)
