@@ -4,19 +4,17 @@ from __future__ import division, print_function
 
 import sys
 import os
-import time
-import gzip
 
 import theano
 import lasagne
-import dann
+import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
 import theano.tensor as T
 
 from datasets import load_moon
-from nn_compilers import compile_sgd
+# from nn_compilers import compile_sgd
 from logs import log_fname, new_logger
 from run import Path, training, plot_bound
 from rgl import ReverseGradientLayer
@@ -39,7 +37,7 @@ def build_nn(input_var=None, hp_lambda=0.5, shape=(None, 2)):
         RGL = feature
     else:
         RGL = ReverseGradientLayer(feature, hp_lambda=hp_lambda)
-
+    
     # Label classifier
     label_predictor = lasagne.layers.DenseLayer(
             RGL,
@@ -52,8 +50,11 @@ def build_nn(input_var=None, hp_lambda=0.5, shape=(None, 2)):
 
 
 def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
-    """Compile the given path of a neural network.
     """
+    Compile the given path of a neural network.
+    """
+    if input_var is None:
+        input_var = lasagne.layers.get_all_layers(nn)[0].input_var
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     train_output = lasagne.layers.get_output(nn)
@@ -98,54 +99,7 @@ def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
     return train_fn, val_fn, output_fn
 
 
-def compile_nesterov(nn, input_var=None, target_var=None, learning_rate=0.01,
-                     momentum=0.9):
-    """Compile the given path of a neural network.
-    """
-    # Create a loss expression for training, i.e., a scalar objective we want
-    # to minimize (for our multi-class problem, it is the cross-entropy loss):
-    train_output = lasagne.layers.get_output(nn)
-    train_loss = lasagne.objectives.categorical_crossentropy(train_output, target_var)
-    train_loss = train_loss.mean()
-    # We could add some weight decay as well here, see lasagne.regularization.
-
-    # Create update expressions for training, i.e., how to modify the
-    # parameters at each training step. Here, we'll use Stochastic Gradient
-    # Descent (SGD) with Nesterov momentum, but Lasagne offers plenty more.
-    params = lasagne.layers.get_all_params(nn, trainable=True)
-    updates = lasagne.updates.nesterov_momentum(
-            train_loss, params, learning_rate=learning_rate, momentum=momentum)
-    
-    # As a bonus, also create an expression for the classification accuracy:
-    train_acc = T.mean(T.eq(T.argmax(train_output, axis=1), target_var),
-                      dtype=theano.config.floatX)
-    # Compile a function performing a training step on a mini-batch (by giving
-    # the updates dictionary) and returning the corresponding training loss:
-    train_fn = theano.function([input_var, target_var], [train_loss, train_acc], updates=updates,
-                               allow_input_downcast=True)
-
-    # Create a loss expression for validation/testing. The crucial difference
-    # here is that we do a deterministic forward pass through the network,
-    # disabling dropout layers.
-    test_output = lasagne.layers.get_output(nn, deterministic=True)
-    test_loss = lasagne.objectives.categorical_crossentropy(test_output,
-                                                            target_var)
-    test_loss = test_loss.mean()
-    # As a bonus, also create an expression for the classification accuracy:
-    test_acc = T.mean(T.eq(T.argmax(test_output, axis=1), target_var),
-                      dtype=theano.config.floatX)
-
-    # Compile a second function computing the validation loss and accuracy:
-    val_fn = theano.function([input_var, target_var], [test_loss, test_acc],
-                             allow_input_downcast=True)
-    # Compile an output function
-    output_fn = theano.function([input_var],
-                                [test_output],
-                                allow_input_downcast=True)
-    return train_fn, val_fn, output_fn
-
-
-def main():
+def main(hp_lambda=0.0):
     """
     The main function.
     """
@@ -162,9 +116,6 @@ def main():
     datas = [source_data,]
 
     model = '1DR'
-    hp_lambda = 0.5
-
-# BORDEL
 
     title = '{}-lambda-{:.4f}-{}'.format(model, hp_lambda, data_name)
     # f_log = log_fname(title)
@@ -175,20 +126,13 @@ def main():
     
     # Build the neural network architecture
     nn = build_nn(input_var=input_var, shape=shape, hp_lambda=hp_lambda)
-    # SGD
     nn_path = Path(nn, compile_sgd, input_var=input_var,
             target_var=target_var, name='source')
-    
-    # NESTEROV
-    # nn_path = Path(nn, compile_nesterov, input_var=input_var,
-    #         target_var=target_var, name='source')
-    
     pathes = [nn_path,]
 
     # Train the NN
     training(datas, pathes, num_epochs=50)
-    
-# BORDEL
+
     # Plot learning accuracy curve
     fig0, ax0 = plt.subplots()
     ax0.plot(nn_path.val_stats['acc'], label='validation', c='blue')
@@ -212,8 +156,26 @@ def main():
     plt.clf() # Clear plot window
     
 
+def parseArgs():
+    """
+    ArgumentParser.
 
-
+    Return
+    ------
+        args: the parsed arguments.
+    """
+    # Retrieve the arguments
+    parser = argparse.ArgumentParser(
+        description="Reverse gradient example -- Example of the destructive"
+                    "power of the Reverse Gradient Layer")
+    parser.add_argument(
+        '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
+        default=0, type=float, dest='hp_lambda')
+    
+    args = parser.parse_args()
+    return args
 
 if __name__ == '__main__':
-    main()
+    args = parseArgs()
+    hp_lambda = args.hp_lambda
+    main(hp_lambda=hp_lambda)
