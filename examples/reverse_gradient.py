@@ -169,7 +169,8 @@ def parseArgs():
         description="Reverse gradient example -- Example of the destructive"
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
-        '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
+        '--lambda', help="Value of the lambda_D param of the Reversal "
+                         "Gradient Layer (if 0 the reversal layer is removed)",
         default=0, type=float, dest='hp_lambda')
     
     args = parser.parse_args()

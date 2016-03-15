@@ -112,7 +112,7 @@ def build_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
     feature = pool2
     # Reversal gradient layer
     RGL = ReverseGradientLayer(feature, hp_lambda=hp_lambda)
-
+    
     # Label Pedictor
     # And, finally, the 10-unit output layer with 50% dropout on its inputs:
     label_dense = lasagne.layers.DenseLayer(

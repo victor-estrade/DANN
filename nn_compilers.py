@@ -11,6 +11,8 @@ import theano.tensor as T
 def compile_sgd(nn, input_var=None, target_var=None, learning_rate=0.01):
     """Compile the given path of a neural network.
     """
+    if input_var is None:
+        input_var = lasagne.layers.get_all_layers(nn)[0].input_var
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     train_output = lasagne.layers.get_output(nn)
@@ -59,6 +61,8 @@ def compile_nesterov(nn, input_var=None, target_var=None, learning_rate=0.01,
                      momentum=0.9):
     """Compile the given path of a neural network.
     """
+    if input_var is None:
+        input_var = lasagne.layers.get_all_layers(nn)[0].input_var
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     train_output = lasagne.layers.get_output(nn)

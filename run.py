@@ -19,8 +19,6 @@ from datasets import load_mnistM, load_moon
 from nn_compilers import compile_sgd, compile_nesterov
 from logs import log_fname, new_logger
 from utils import pop_last_line
-from sklearn.datasets import make_moons as mkmoon
-
 
 
 ##############################################################################
@@ -254,7 +252,7 @@ if __name__ == '__main__':
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.ivector('targets')
-    shape = (None, X_train.shape[1])
+    shape = (None, 2)
 
 
     # MNIST dataset
@@ -265,40 +263,6 @@ if __name__ == '__main__':
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
     shape = (None, 3, 28, 28)
-
-
-    source_data = {
-                    'X_train': X_train,
-                    'y_train': y_train,
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize,
-                    }
-
-    target_data = {
-                    'X_train': X_t_train,
-                    'y_train': y_t_train,
-                    'X_val': X_t_val,
-                    'y_val': y_t_val,
-                    'X_test': X_t_test,
-                    'y_test': y_t_test,
-                    'batchsize':batchsize,
-                    }
-
-    domain_data = {
-                    'X_train': np.vstack([X_train, X_t_train]),
-                    'y_train': np.hstack([np.zeros_like(y_train, dtype=np.int32), 
-                               np.ones_like(y_t_train, dtype=np.int32)]),
-                    'X_val': np.vstack([X_val, X_t_val]),
-                    'y_val': np.hstack([np.zeros_like(y_val, dtype=np.int32), 
-                               np.ones_like(y_t_val, dtype=np.int32)]),
-                    'X_test': np.vstack([X_test, X_t_test]),
-                    'y_test': np.hstack([np.zeros_like(y_test, dtype=np.int32), 
-                               np.ones_like(y_t_test, dtype=np.int32)]),
-                    'batchsize':batchsize*2,
-                    }
 
     # Gather the data in the right order
     datas = [source_data, 

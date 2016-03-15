@@ -17,6 +17,14 @@ from scipy import misc
 from sklearn.datasets import make_moons as mkmoon
 
 
+np.random.seed(12345)
+
+
+def shuffle(X, y,):
+    indices = np.arange(len(X))
+    np.random.shuffle(indices)
+    return X[indices], y[indices]
+
 
 # ============================================================================
 #                   Moon & Moon rotated
@@ -58,11 +66,14 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
     y = np.array(y, dtype=np.int32)
     X_r = rotate_data(X, angle=angle)
 
-    X_train, X_val, X_test = X[0:300], X[300:400], X[400:]
-    y_train, y_val, y_test = y[0:300], y[300:400], y[400:]
+    X_S, y_S = shuffle(X, y)
+    X_T, y_T = shuffle(X_r, y)
+
+    X_train, X_val, X_test = X_S[0:300], X_S[300:400], X_S[400:]
+    y_train, y_val, y_test = y_S[0:300], y_S[300:400], y_S[400:]
     
-    X_t_train, X_t_val, X_t_test = X_r[0:300], X_r[300:400], X_r[400:]
-    y_t_train, y_t_val, y_t_test = y[0:300], y[300:400], y[400:]
+    X_t_train, X_t_val, X_t_test = X_T[0:300], X_T[300:400], X_T[400:]
+    y_t_train, y_t_val, y_t_test = y_T[0:300], y_T[300:400], y_T[400:]
     
     source_data = {
                     'X_train': X_train,
@@ -105,7 +116,6 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
 # Get every images files from the BSR-BSDS500 training dataset
 bsr = 'data/BSR/BSDS500/data/images/train/*.jpg'
 bsr = glob(bsr)
-np.random.seed(12345)
 
 
 def to_rgb(im):
