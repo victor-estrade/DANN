@@ -103,7 +103,7 @@ def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
     return train_fn, val_fn, output_fn
 
 
-def main(hp_lambda=0.0, angle=-35):
+def main(hp_lambda=0.0, angle=-35, label_rate=1, domain_rate=1):
     """
     The main function.
     """
@@ -130,12 +130,12 @@ def main(hp_lambda=0.0, angle=-35):
     
     # Build the neural network architecture
     label_nn, domain_nn = build_nn(input_var=input_var, shape=shape, hp_lambda=hp_lambda)
-    label_path = Path(label_nn, compile_sgd, input_var=input_var,
-            target_var=target_var, name='source')
-    domain_path = Path(domain_nn, compile_sgd, input_var=input_var,
-            target_var=target_var, name='source')
-    target_path = Path(label_nn, compile_sgd, input_var=input_var,
-            target_var=target_var, name='source', trainable=False)
+    label_path = Path(label_nn, compile_sgd, {'learning_rate':label_rate},
+        input_var=input_var, target_var=target_var, name='source')
+    domain_path = Path(domain_nn, compile_sgd, {'learning_rate':domain_rate},
+        input_var=input_var, target_var=target_var, name='source')
+    target_path = Path(label_nn, compile_sgd,
+            input_var=input_var, target_var=target_var, name='source', trainable=False)
     pathes = [label_path, domain_path, target_path]
 
     # Train the NN
@@ -189,7 +189,13 @@ def parseArgs():
     parser.add_argument(
         '--angle', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=-35., type=float, dest='angle')
-    
+    parser.add_argument(
+        '--label-rate', help="The learning rate of the label part of the neural network ",
+        default=1, type=float, dest='label_rate')
+    parser.add_argument(
+        '--domain-rate', help="The learning rate of the domain part of the neural network ",
+        default=1, type=float, dest='domain_rate')
+
     args = parser.parse_args()
     return args
 
@@ -197,4 +203,7 @@ if __name__ == '__main__':
     args = parseArgs()
     hp_lambda = args.hp_lambda
     angle = args.angle
-    main(hp_lambda=hp_lambda, angle=angle)
+    label_rate = args.label_rate
+    domain_rate = args.domain_rate
+    main(hp_lambda=hp_lambda, angle=angle,
+        label_rate=label_rate, domain_rate=domain_rate,)

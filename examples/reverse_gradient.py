@@ -19,6 +19,7 @@ from logs import log_fname, new_logger
 from run import Path, training, plot_bound
 from rgl import ReverseGradientLayer
 
+
 def build_nn(input_var=None, hp_lambda=0.5, shape=(None, 2)):
     # Input layer, as usual:
     input_layer = lasagne.layers.InputLayer(shape=shape,
@@ -99,7 +100,7 @@ def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
     return train_fn, val_fn, output_fn
 
 
-def main(hp_lambda=0.0):
+def main(hp_lambda=0.0, learning_rate=1):
     """
     The main function.
     """
@@ -126,8 +127,8 @@ def main(hp_lambda=0.0):
     
     # Build the neural network architecture
     nn = build_nn(input_var=input_var, shape=shape, hp_lambda=hp_lambda)
-    nn_path = Path(nn, compile_sgd, input_var=input_var,
-            target_var=target_var, name='source')
+    nn_path = Path(nn, compile_sgd, {'learning_rate':learning_rate}, 
+            input_var=input_var, target_var=target_var, name='source')
     pathes = [nn_path,]
 
     # Train the NN
@@ -172,11 +173,15 @@ def parseArgs():
         '--lambda', help="Value of the lambda_D param of the Reversal "
                          "Gradient Layer (if 0 the reversal layer is removed)",
         default=0, type=float, dest='hp_lambda')
-    
+    parser.add_argument(
+        '--learning-rate', help="The learning rate of the neural network ",
+        default=1, type=float, dest='lr')
+
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parseArgs()
     hp_lambda = args.hp_lambda
-    main(hp_lambda=hp_lambda)
+    lr = args.lr
+    main(hp_lambda=hp_lambda, learning_rate=lr)

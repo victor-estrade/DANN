@@ -26,7 +26,7 @@ from utils import pop_last_line
 ##############################################################################
 ##############################################################################
 class Path(object):
-    def __init__(self, nn, compiler, input_var=None, target_var=None, name='',
+    def __init__(self, nn, compiler, compiler_kwargs={}, input_var=None, target_var=None, name='',
                 batchsize=500, trainable=True):
         """Path class is a helper class to handle the training proscess.
 
@@ -44,6 +44,7 @@ class Path(object):
         """
         self.nn = nn
         self.compiler = compiler
+        self.compiler_kwargs = compiler_kwargs
         self.input_var = input_var
         self.target_var = target_var
         self.name = name
@@ -70,7 +71,8 @@ class Path(object):
             input_var:
             target_var:
         """
-        self.train_fn, self.test_fn, self.output_fn = self.compiler(self.nn, self.input_var, self.target_var)
+        self.train_fn, self.test_fn, self.output_fn = self.compiler(self.nn, 
+                                self.input_var, self.target_var, **self.compiler_kwargs)
         return self
 
     def train(self, X, y, save=True):
