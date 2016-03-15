@@ -25,6 +25,11 @@ def shuffle(X, y,):
     np.random.shuffle(indices)
     return X[indices], y[indices]
 
+def domain_X_y(X1, X2, y1, y2):
+    X = np.vstack([X1, X2])
+    y = np.hstack([np.zeros_like(y1, dtype=np.int32), 
+               np.ones_like(y2, dtype=np.int32)])
+    return shuffle(X, y)
 
 # ============================================================================
 #                   Moon & Moon rotated
@@ -94,19 +99,19 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
                     'y_test': y_t_test,
                     'batchsize':batchsize,
                     }
-
+    X_train , y_train = domain_X_y(X_train, X_t_train, y_train, y_t_train)
+    X_val , y_val = domain_X_y(X_val, X_t_val, y_val, y_t_val)
+    X_test , y_test = domain_X_y(X_test, X_t_test, y_test, y_t_test)
     domain_data = {
-                    'X_train': np.vstack([X_train, X_t_train]),
-                    'y_train': np.hstack([np.zeros_like(y_train, dtype=np.int32), 
-                               np.ones_like(y_t_train, dtype=np.int32)]),
-                    'X_val': np.vstack([X_val, X_t_val]),
-                    'y_val': np.hstack([np.zeros_like(y_val, dtype=np.int32), 
-                               np.ones_like(y_t_val, dtype=np.int32)]),
-                    'X_test': np.vstack([X_test, X_t_test]),
-                    'y_test': np.hstack([np.zeros_like(y_test, dtype=np.int32), 
-                               np.ones_like(y_t_test, dtype=np.int32)]),
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
                     'batchsize':batchsize*2,
                     }
+
     return source_data, target_data, domain_data
 
 
@@ -196,7 +201,7 @@ def load_mnist():
     return train_S, valid_S, test_S
 
 
-def load_mnistM(shape=(-1, 28, 28, 3)):
+def load_mnistM(shape=(-1, 28, 28, 3), batchsize=500):
     """
     Load the MNIST / MNIST-M problem
 
@@ -250,16 +255,16 @@ def load_mnistM(shape=(-1, 28, 28, 3)):
                     'batchsize':batchsize,
                     }
 
+    X_train , y_train = domain_X_y(X_train, X_t_train, y_train, y_t_train)
+    X_val , y_val = domain_X_y(X_val, X_t_val, y_val, y_t_val)
+    X_test , y_test = domain_X_y(X_test, X_t_test, y_test, y_t_test)
     domain_data = {
-                    'X_train': np.vstack([X_train, X_t_train]),
-                    'y_train': np.hstack([np.zeros_like(y_train, dtype=np.int32), 
-                               np.ones_like(y_t_train, dtype=np.int32)]),
-                    'X_val': np.vstack([X_val, X_t_val]),
-                    'y_val': np.hstack([np.zeros_like(y_val, dtype=np.int32), 
-                               np.ones_like(y_t_val, dtype=np.int32)]),
-                    'X_test': np.vstack([X_test, X_t_test]),
-                    'y_test': np.hstack([np.zeros_like(y_test, dtype=np.int32), 
-                               np.ones_like(y_t_test, dtype=np.int32)]),
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
                     'batchsize':batchsize*2,
                     }
 
