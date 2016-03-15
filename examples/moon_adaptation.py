@@ -103,7 +103,7 @@ def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
     return train_fn, val_fn, output_fn
 
 
-def main(hp_lambda=0.0, angle=-35, label_rate=1, domain_rate=1):
+def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     """
     The main function.
     """
@@ -133,13 +133,13 @@ def main(hp_lambda=0.0, angle=-35, label_rate=1, domain_rate=1):
     label_path = Path(label_nn, compile_sgd, {'learning_rate':label_rate},
         input_var=input_var, target_var=target_var, name='source')
     domain_path = Path(domain_nn, compile_sgd, {'learning_rate':domain_rate},
-        input_var=input_var, target_var=target_var, name='source')
+        input_var=input_var, target_var=target_var, name='domain')
     target_path = Path(label_nn, compile_sgd,
-            input_var=input_var, target_var=target_var, name='source', trainable=False)
+            input_var=input_var, target_var=target_var, name='target', trainable=False)
     pathes = [label_path, domain_path, target_path]
 
     # Train the NN
-    training(datas, pathes, num_epochs=50)
+    training(datas, pathes, num_epochs=num_epochs)
 
     # Plot learning accuracy curve
     fig0, ax0 = plt.subplots()
@@ -184,8 +184,11 @@ def parseArgs():
         description="Reverse gradient example -- Example of the destructive"
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
+        '--epoch', help='Number of epoch in the training session',
+        default=50, type=int, dest='num_epochs')
+    parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0, type=float, dest='hp_lambda')
+        default=0.7, type=float, dest='hp_lambda')
     parser.add_argument(
         '--angle', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=-35., type=float, dest='angle')
@@ -201,9 +204,10 @@ def parseArgs():
 
 if __name__ == '__main__':
     args = parseArgs()
+    num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     angle = args.angle
     label_rate = args.label_rate
     domain_rate = args.domain_rate
-    main(hp_lambda=hp_lambda, angle=angle,
+    main(hp_lambda=hp_lambda,  num_epochs=num_epochs, angle=angle,
         label_rate=label_rate, domain_rate=domain_rate,)

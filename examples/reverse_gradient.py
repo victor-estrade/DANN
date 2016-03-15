@@ -100,7 +100,7 @@ def compile_sgd(nn, input_var=None, target_var=None, learning_rate=1):
     return train_fn, val_fn, output_fn
 
 
-def main(hp_lambda=0.0, learning_rate=1):
+def main(hp_lambda=0.0, num_epochs=50, learning_rate=1):
     """
     The main function.
     """
@@ -132,7 +132,7 @@ def main(hp_lambda=0.0, learning_rate=1):
     pathes = [nn_path,]
 
     # Train the NN
-    training(datas, pathes, num_epochs=50)
+    training(datas, pathes, num_epochs=num_epochs)
 
     # Plot learning accuracy curve
     fig0, ax0 = plt.subplots()
@@ -170,6 +170,9 @@ def parseArgs():
         description="Reverse gradient example -- Example of the destructive"
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
+        '--epoch', help='Number of epoch in the training session',
+        default=50, type=int, dest='num_epochs')
+    parser.add_argument(
         '--lambda', help="Value of the lambda_D param of the Reversal "
                          "Gradient Layer (if 0 the reversal layer is removed)",
         default=0, type=float, dest='hp_lambda')
@@ -182,6 +185,7 @@ def parseArgs():
 
 if __name__ == '__main__':
     args = parseArgs()
+    num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     lr = args.lr
-    main(hp_lambda=hp_lambda, learning_rate=lr)
+    main(hp_lambda=hp_lambda,  num_epochs=num_epochs, learning_rate=lr)
