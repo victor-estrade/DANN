@@ -41,8 +41,11 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
 
     Params
     ------
+        noise: (default=0.05) the noise of the moon data generator
+        angle: (default=35.0) the angle (in degree) of the rotated Moons
         shape: (default=(-1, 28, 28, 3)) the output shape of the data.
             Should be (-1, 3, 28, 28) to be used by convolution layers.
+    
     Return
     ------
         source_data: dict with the separated data
@@ -93,6 +96,7 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
                                np.ones_like(y_t_test, dtype=np.int32)]),
                     'batchsize':batchsize*2,
                     }
+    return source_data, target_data, domain_data
 
 
 # ============================================================================

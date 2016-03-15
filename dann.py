@@ -24,7 +24,7 @@ from logs import log_fname, new_logger
 factory_dict = {}
 
 
-def build_cnn(input_var=None, shape=(None, 3, 28, 28)):
+def build_cnn(input_var=None, shape=(None, 3, 28, 28), **kwargs):
     # As a third model, we'll create a CNN of two convolution + pooling stages
     # and a fully-connected hidden layer in front of the output layer.
 
@@ -115,8 +115,15 @@ def build_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
 
     # Label Pedictor
     # And, finally, the 10-unit output layer with 50% dropout on its inputs:
-    label_predictor = lasagne.layers.DenseLayer(
+    label_dense = lasagne.layers.DenseLayer(
             lasagne.layers.dropout(feature, p=.5),
+            num_units=100,
+            nonlinearity=lasagne.nonlinearities.softmax,
+            W=lasagne.init.GlorotUniform(),
+            )
+    label_predictor = lasagne.layers.DenseLayer(
+            lasagne.layers.dropout(label_dense, p=.5),
+            # lasagne.layers.dropout(feature, p=.5),
             num_units=10,
             nonlinearity=lasagne.nonlinearities.softmax,
             W=lasagne.init.GlorotUniform(),
@@ -154,29 +161,31 @@ def build_small_dann(input_var=None, hp_lambda=0.5, shape=(None, 3, 28, 28)):
     # A fully-connected layer of 256 units
     feature = lasagne.layers.DenseLayer(
             input_layer,
-            num_units=256,
+            num_units=6,
             nonlinearity=lasagne.nonlinearities.sigmoid,
-            W=lasagne.init.GlorotUniform(),
+            W=lasagne.init.Uniform(range=0.1, std=None, mean=0.0),
             )
     feature = lasagne.layers.DenseLayer(
             feature,
-            num_units=128,
+            num_units=50,
             nonlinearity=lasagne.nonlinearities.sigmoid,
-            W=lasagne.init.GlorotUniform(),
+            W=lasagne.init.Uniform(range=0.1, std=None, mean=0.0),
             )
 
     # Reversal gradient layer
     RGL = ReverseGradientLayer(feature, hp_lambda=hp_lambda)
     
     # Label classifier
-    label_hidden = lasagne.layers.DenseLayer(
-            feature,
-            num_units=50,
-            nonlinearity=lasagne.nonlinearities.sigmoid,
-            W=lasagne.init.GlorotUniform(),
-            )
+    # label_hidden = lasagne.layers.DenseLayer(
+    #         feature,
+    #         num_units=50,
+    #         nonlinearity=lasagne.nonlinearities.sigmoid,
+    #         W=lasagne.init.GlorotUniform(),
+    #         )
     label_predictor = lasagne.layers.DenseLayer(
-            label_hidden,
+            # input_layer,
+            feature,
+            # label_hidden,
             num_units=2,
             nonlinearity=lasagne.nonlinearities.softmax,
             W=lasagne.init.GlorotUniform(),
