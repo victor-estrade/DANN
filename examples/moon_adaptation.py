@@ -170,7 +170,8 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     plt.title('Moon rotated bounds')
     plt.savefig('fig/moon-rot-bound.png')
     plt.clf() # Clear plot window
-    
+
+
 def parseArgs():
     """
     ArgumentParser.
