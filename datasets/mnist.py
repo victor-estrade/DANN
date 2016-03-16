@@ -14,14 +14,16 @@ from utils import domain_X_y
 from glob import glob
 from scipy import misc
 
-
 np.random.seed(12345)
 
 # ============================================================================
 #                   MNIST & MNIST-M
 # ============================================================================
+data_dir = os.path.dirname(__file__)
+data_dir = os.path.join(data_dir, 'data')
+
 # Get every images files from the BSR-BSDS500 training dataset
-bsr = 'data/BSR/BSDS500/data/images/train/*.jpg'
+bsr = os.path.join(data_dir, 'BSR/BSDS500/data/images/train/*.jpg')
 bsr = glob(bsr)
 
 
@@ -97,7 +99,7 @@ def load_mnist():
     ------
         train, valid, test: the datasets, couples of numpy arrays (X, y). 
     """
-    f = gzip.open('data/mnist.pkl.gz', 'rb')
+    f = gzip.open(os.path.join(data_dir, 'mnist.pkl.gz'), 'rb')
     train_S, valid_S, test_S = pickle.load(f)
     f.close()
     return train_S, valid_S, test_S
@@ -175,11 +177,9 @@ def load_mnistM(shape=(-1, 28, 28, 3), batchsize=500):
 
 if __name__ == '__main__':
     print('I am at your service, master.')
-    source, target = load_mnistM()
-    train_S, val_S, test_S = source
-    train_T, val_T, test_T = target
-    X_S, y_S = train_S
-    X_T, y_T = train_T
+    source, target, domain = load_mnistM()
+    X_S, y_S = source['X_train'], source['y_train']
+    X_T, y_T = target['X_train'], target['y_train']
 
     i = np.random.randint(X_S.shape[0])
 
@@ -189,7 +189,6 @@ if __name__ == '__main__':
     plt.imshow(X_T[i])
     plt.title('APRES-label='+str(y_T[i]))
     plt.show()
-
     
     # SAVE DATA
     # if not os.path.isdir('data/train/'):

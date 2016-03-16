@@ -5,19 +5,14 @@ from __future__ import division, print_function
 import sys
 import os
 import time
-import gzip
 
 import theano
 import lasagne
 
-import cPickle as pickle
 import numpy as np
 import theano.tensor as T
-# import pandas as pd
-import matplotlib.pyplot as plt
 
 from rgl import ReverseGradientLayer
-from datasets import mnist_blend
 from logs import log_fname, new_logger
 
 # BUILD FACTORY :

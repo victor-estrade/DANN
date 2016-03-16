@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 import theano.tensor as T
 
 from datasets import load_moon
-# from nn_compilers import compile_sgd
 from logs import log_fname, new_logger
 from run import Path, training, plot_bound
 from rgl import ReverseGradientLayer

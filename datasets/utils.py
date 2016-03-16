@@ -52,16 +52,16 @@ def domain_X_y(X_list, shuffle=True):
     """
     X = np.vstack(X_list)
 
-    y = np.hstack([i*np.ones((X.shape[0],), dtype=np.int32), 
-               for i, X in enumerate(X_list)])
+    y = np.hstack([i*np.ones((arr.shape[0],), dtype=np.int32)
+               for i, arr in enumerate(X_list)])
     if shuffle:
         X, y = shuffle_array(X, y)
     return X, y
 
 if __name__ == '__main__':
-    a = np.arange(10)
-    b = np.arange(10)
-    c = np.arange(10)
+    a = np.arange(20).reshape(-1, 2)
+    b = np.arange(20).reshape(-1, 2)
+    c = np.arange(20).reshape(-1, 2)
 
     print(*shuffle_array(a))
     print(*shuffle_array(a, b))

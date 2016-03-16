@@ -5,7 +5,6 @@ from __future__ import division, print_function
 import sys
 import os
 import time
-import gzip
 
 import theano
 import lasagne
@@ -18,7 +17,6 @@ import theano.tensor as T
 from datasets import load_mnistM, load_moon
 from nn_compilers import compile_sgd, compile_nesterov
 from logs import log_fname, new_logger
-from utils import pop_last_line
 
 
 ##############################################################################

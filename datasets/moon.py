@@ -73,9 +73,9 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
                     'batchsize':batchsize,
                     }
 
-    X_train , y_train = domain_X_y([X_train, X_t_train])
-    X_val , y_val = domain_X_y([X_val, X_t_val])
-    X_test , y_test = domain_X_y([X_test, X_t_test])
+    X_train, y_train = domain_X_y([X_train, X_t_train])
+    X_val, y_val = domain_X_y([X_val, X_t_val])
+    X_test, y_test = domain_X_y([X_test, X_t_test])
     domain_data = {
                     'X_train': X_train,
                     'y_train': y_train, 
