@@ -47,7 +47,6 @@ def rotate_data(X, angle=35.):
     return X_r
 
 
-
 def load_moon(noise=0.05, angle=35., batchsize=32):
     """
     Load the Moon / Moon-rotated problem
