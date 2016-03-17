@@ -13,7 +13,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import load_mnist_mirror
+from datasets import load_mnist_src, random_mat_dataset
 from rgl import ReverseGradientLayer
 from logs import log_fname, new_logger
 from compilers import compiler_sgd_mom
@@ -26,16 +26,15 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     The main function.
     """
     # Moon Dataset
-    data_name = 'MirrorMnist'
+    data_name = 'MnistRMAT'
     batchsize = 500
-    source_data, target_data, domain_data = load_mnist_mirror()
-
-    # Set up the training :
+    source_data = load_mnist_src()
+    source_data, target_data, domain_data = random_mat_dataset(source_data)
     datas = [source_data, domain_data, target_data]
-
+    # Set up the training :
     model = 'ShallowDANN'
-
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+
     # f_log = log_fname(title)
     logger = new_logger()
     logger.info('Data: {}'.format(data_name))
@@ -87,7 +86,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     ax.set_title('Target image (pred={})'.format(label))
     fig.savefig('fig/MNIST-sample.png')
     fig.clf() # Clear plot window
-    
+
 
 def parseArgs():
     """

@@ -13,7 +13,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import load_mnist_mirror
+from datasets import load_moon, random_mat_dataset
 from rgl import ReverseGradientLayer
 from logs import log_fname, new_logger
 from compilers import compiler_sgd_mom
@@ -26,9 +26,10 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     The main function.
     """
     # Moon Dataset
-    data_name = 'MirrorMnist'
-    batchsize = 500
-    source_data, target_data, domain_data = load_mnist_mirror()
+    data_name = 'MoonRMAT'
+    batchsize = 32
+    source_data, target_data, domain_data = load_moon()
+    source_data, target_data, domain_data = random_mat_dataset(source_data)
 
     # Set up the training :
     datas = [source_data, domain_data, target_data]
@@ -38,26 +39,25 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
     # f_log = log_fname(title)
     logger = new_logger()
-    logger.info('Data: {}'.format(data_name))
     logger.info('Model: {}'.format(model))
+    logger.info('Data: {}'.format(data_name))
     logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
-    input_var = T.tensor3('inputs')
+    input_var = T.matrix('inputs')
     target_var = T.ivector('targets')
-    shape = (None, 28, 28)
+    shape = (None, 2)
     input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
     # Build the neural network architecture
-    dann = ShallowDANN(50, 10, input_layer, hp_lambda=hp_lambda)
+    dann = ShallowDANN(3, 2, input_layer, hp_lambda=hp_lambda)
 
     logger.info('Compiling functions')
     dann.compile_label(compiler_sgd_mom(lr=label_rate, mom=0))
     dann.compile_domain(compiler_sgd_mom(lr=domain_rate, mom=0))
 
     # Train the NN
-    stats = dann.training(source_data, domain_data, 
-        target=target_data, num_epochs=num_epochs, logger=logger)
+    stats = dann.training(source_data, domain_data, target=target_data, num_epochs=num_epochs)
 
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
@@ -72,22 +72,23 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
     fig.clf() # Clear plot window
 
-    # Sample image:
-    i = np.random.RandomState().randint(source_data['X_test'].shape[0])
-    sample_src = source_data['X_test'][i]
-    sample_trg = target_data['X_test'][i]
-    fig = plt.figure()
-    ax = fig.add_subplot(1, 2, 1)
-    ax.imshow(sample_src, cmap='Greys_r')
-    label = dann.predict_label(sample_src[np.newaxis])[0]
-    ax.set_title('Source image (pred={})'.format(label))
-    ax = fig.add_subplot(1, 2, 2)
-    ax.imshow(sample_trg, cmap='Greys_r')
-    label = dann.predict_label(sample_trg[np.newaxis])[0]
-    ax.set_title('Target image (pred={})'.format(label))
-    fig.savefig('fig/MNIST-sample.png')
-    fig.clf() # Clear plot window
-    
+    # Plot boundary :
+    X = np.vstack([source_data['X_train'], source_data['X_val'], source_data['X_test'], ])
+    y = np.hstack([source_data['y_train'], source_data['y_val'], source_data['y_test'], ])
+    colors = 'rb'
+    plot_bound(X, y, dann.proba_label)
+    plt.title('Moon bounds')
+    plt.savefig('fig/moon-bound.png')
+    plt.clf() # Clear plot window
+
+    X = np.vstack([target_data['X_train'], target_data['X_val'], target_data['X_test'], ])
+    y = np.hstack([target_data['y_train'], target_data['y_val'], target_data['y_test'], ])
+    colors = 'rb'
+    plot_bound(X, y, dann.proba_label)
+    plt.title('Moon A bounds')
+    plt.savefig('fig/moon-RMAT-bound.png')
+    plt.clf() # Clear plot window
+
 
 def parseArgs():
     """

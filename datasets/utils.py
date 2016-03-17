@@ -113,6 +113,51 @@ def diag_dataset(source_data):
 
     return source_data, target_data, domain_data
 
+def random_mat_dataset(source_data):
+    X_train = source_data['X_train']
+    y_train = source_data['y_train']
+    X_val = source_data['X_val']
+    y_val = source_data['y_val']
+    X_test = source_data['X_test']
+    y_test = source_data['y_test']
+    batchsize = source_data['batchsize']
+    size = np.prod(X_train.shape[1:])
+
+    y_t_train = y_train
+    y_t_val = y_val
+    y_t_test = y_test
+
+    A = np.random.random((size, size))
+    X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
+    X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
+    X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
+    
+    target_data = {
+                'X_train': X_t_train,
+                'y_train': y_t_train,
+                'X_val': X_t_val,
+                'y_val': y_t_val,
+                'X_test': X_t_test,
+                'y_test': y_t_test,
+                'batchsize':batchsize,
+                }
+
+    X_train, y_train = domain_X_y([X_train, X_t_train])
+    X_val, y_val = domain_X_y([X_val, X_t_val])
+    X_test, y_test = domain_X_y([X_test, X_t_test])
+    domain_data = {
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize*2,
+                    }
+
+    return source_data, target_data, domain_data
+
+
 if __name__ == '__main__':
     a = np.arange(20).reshape(-1, 2)
     b = np.arange(20).reshape(-1, 2)
