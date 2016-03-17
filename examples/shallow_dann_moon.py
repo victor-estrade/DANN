@@ -93,12 +93,11 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
 
 
-class ShallowDANN(object) :
-    
+class ShallowDANN(object):
     """
     A shallow DANN
     """
-    
+
     def __init__(self, nb_units, nb_output, input_layer, nb_domain=2, hp_lambda=0):
         
         self.nb_output = nb_output
@@ -139,10 +138,9 @@ class ShallowDANN(object) :
 
     def compile_label(self, compiler):
         self.train_label, self.predict_label, self.valid_label, self.proba_label = compiler(self.label_predictor)
-        
+
     def compile_domain(self, compiler):
         self.train_domain, self.predict_domain, self.valid_domain, self.proba_domain = compiler(self.domain_predictor)
-        
 
     def training(self, source, domain, target=None, num_epochs=50, logger=None):
         """ training procedure. Used to train a multiple output network.
@@ -175,7 +173,7 @@ class ShallowDANN(object) :
                 loss, acc = self.train_domain(X, y)
                 stats['domain training loss'].append(loss)
                 stats['domain training acc'].append(acc*100)
-                
+
             # Validation (forward propagation)
             source_batches = iterate_minibatches(source['X_val'], source['y_val'], source['batchsize'])
             domain_batches = iterate_minibatches(domain['X_val'], domain['y_val'], domain['batchsize'])
@@ -225,7 +223,7 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
     logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
-    
+
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.ivector('targets')
@@ -238,10 +236,10 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     logger.info('Compiling functions')
     dann.compile_label(compiler_sgd_mom(lr=label_rate, mom=0))
     dann.compile_domain(compiler_sgd_mom(lr=domain_rate, mom=0))
-    
+
     # Train the NN
     dann.training(source_data, domain_data, num_epochs=num_epochs)
-    
+
     # Plot boundary :
     X = np.vstack([source_data['X_train'], source_data['X_val'], source_data['X_test'], ])
     y = np.hstack([source_data['y_train'], source_data['y_val'], source_data['y_test'], ])
@@ -250,7 +248,7 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     plt.title('Moon bounds')
     plt.savefig('fig/moon-bound.png')
     plt.clf() # Clear plot window
-    
+
     X = np.vstack([target_data['X_train'], target_data['X_val'], target_data['X_test'], ])
     y = np.hstack([target_data['y_train'], target_data['y_val'], target_data['y_test'], ])
     colors = 'rb'
