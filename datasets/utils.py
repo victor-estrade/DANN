@@ -6,8 +6,6 @@ import numpy as np
 
 np.random.seed(12345)
 
-
-
 def shuffle_array(*args):
     """
     Shuffle the given data. Keeps the relative associations arr_j[i] <-> arr_k[i].
@@ -57,6 +55,63 @@ def domain_X_y(X_list, shuffle=True):
     if shuffle:
         X, y = shuffle_array(X, y)
     return X, y
+
+
+def diag_dominant_matrix(size):
+    """
+    https://matthewhr.wordpress.com/2013/09/01/how-to-construct-an-invertible-matrix-just-choose-large-diagonals/
+    """
+    matrix = np.random.random((size, size))
+    s = np.sum(matrix, axis=1)
+    matrix += np.eye(size) * s
+    eigens = np.linalg.eig(matrix)[0]
+    if (eigens == 0).any():
+        raise ValueError('The matrix is not invertible. Internet lied to me ! {}'.format(str(eigens)))
+    return matrix
+
+def diag_dataset(source_data):
+    X_train = source_data['X_train']
+    y_train = source_data['y_train']
+    X_val = source_data['X_val']
+    y_val = source_data['y_val']
+    X_test = source_data['X_test']
+    y_test = source_data['y_test']
+    batchsize = source_data['batchsize']
+    size = np.prod(X_train.shape[1:])
+
+    y_t_train = y_train
+    y_t_val = y_val
+    y_t_test = y_test
+
+    A = diag_dominant_matrix(size)
+    X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
+    X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
+    X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
+    
+    target_data = {
+                'X_train': X_t_train,
+                'y_train': y_t_train,
+                'X_val': X_t_val,
+                'y_val': y_t_val,
+                'X_test': X_t_test,
+                'y_test': y_t_test,
+                'batchsize':batchsize,
+                }
+
+    X_train, y_train = domain_X_y([X_train, X_t_train])
+    X_val, y_val = domain_X_y([X_val, X_t_val])
+    X_test, y_test = domain_X_y([X_test, X_t_test])
+    domain_data = {
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize*2,
+                    }
+
+    return source_data, target_data, domain_data
 
 if __name__ == '__main__':
     a = np.arange(20).reshape(-1, 2)

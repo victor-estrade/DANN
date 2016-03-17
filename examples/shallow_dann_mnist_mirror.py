@@ -21,7 +21,7 @@ from utils import plot_bound
 from dann import ShallowDANN
 
 
-def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
+def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     """
     The main function.
     """
@@ -56,7 +56,8 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     dann.compile_domain(compiler_sgd_mom(lr=domain_rate, mom=0))
 
     # Train the NN
-    stats = dann.training(source_data, domain_data, target=target_data, num_epochs=num_epochs)
+    stats = dann.training(source_data, domain_data, 
+        target=target_data, num_epochs=num_epochs, logger=logger)
 
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
@@ -69,6 +70,22 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+    fig.clf() # Clear plot window
+
+    # Sample image:
+    i = np.random.RandomState().randint(source_data['X_test'].shape[0])
+    sample_src = source_data['X_test'][i]
+    sample_trg = target_data['X_test'][i]
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 2, 1)
+    ax.imshow(sample_src, cmap='Greys_r')
+    label = dann.predict_label(sample_src[np.newaxis])[0]
+    ax.set_title('Source image (pred={})'.format(label))
+    ax = fig.add_subplot(1, 2, 2)
+    ax.imshow(sample_src, cmap='Greys_r')
+    label = dann.predict_label(sample_trg[np.newaxis])[0]
+    ax.set_title('Target image (pred={})'.format(label))
+    fig.savefig('fig/MNIST-sample.png')
     fig.clf() # Clear plot window
     
 

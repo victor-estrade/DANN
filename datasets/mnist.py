@@ -32,6 +32,41 @@ def load_mnist():
     f.close()
     return train_S, valid_S, test_S
 
+def load_mnist_src(batchsize=500):
+    """
+    Load the MNIST / 1-MNIST problem
+
+    Params
+    ------
+        batchsize: (default=500) the batch size.
+
+    Return
+    ------
+        source_data: dict with the separated data
+
+    """
+    source = load_mnist() # Load the raw MNIST data
+    train_S, val_S, test_S = source
+    
+    X_train, y_train = train_S
+    X_val, y_val = val_S
+    X_test, y_test = test_S
+    
+    X_train = X_train.reshape(-1, 28, 28)
+    X_val = X_val.reshape(-1, 28, 28)
+    X_test = X_test.reshape(-1, 28, 28)
+ 
+    source_data = {
+                    'X_train': X_train,
+                    'y_train': y_train,
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize,
+                    }
+    return source_data
+
 # ============================================================================
 #                   MNIST-M
 # ============================================================================
