@@ -114,12 +114,13 @@ class ShallowDANN(object):
                 stats['domain valid acc'].append(acc*100)
 
             if target is not None:
-                target_batches = iterate_minibatches(target['X_val'], target['y_val'], target['batchsize'])
-                for target_batch in target_batches:
-                    X, y = source_batch
-                    loss, acc = self.valid_label(X, y)
-                    stats['target valid loss'].append(loss)
-                    stats['target valid acc'].append(acc*100)
+                loss, acc = self.valid_label(target['X_train'], target['y_train'])
+                stats['target training loss'].append(loss)
+                stats['target training acc'].append(acc*100)
+
+                loss, acc = self.valid_label(target['X_val'], target['y_val'])
+                stats['target valid loss'].append(loss)
+                stats['target valid acc'].append(acc*100)
 
             logger.info("Epoch {} of {} took {:.3f}s".format(
                 epoch + 1, num_epochs, time.time() - start_time))
@@ -234,12 +235,13 @@ class DenseDANN(object):
                 stats['domain valid acc'].append(acc*100)
 
             if target is not None:
-                target_batches = iterate_minibatches(target['X_val'], target['y_val'], target['batchsize'])
-                for target_batch in target_batches:
-                    X, y = source_batch
-                    loss, acc = self.valid_label(X, y)
-                    stats['target valid loss'].append(loss)
-                    stats['target valid acc'].append(acc*100)
+                loss, acc = self.valid_label(target['X_train'], target['y_train'])
+                stats['target training loss'].append(loss)
+                stats['target training acc'].append(acc*100)
+
+                loss, acc = self.valid_label(target['X_val'], target['y_val'])
+                stats['target valid loss'].append(loss)
+                stats['target valid acc'].append(acc*100)
 
             logger.info("Epoch {} of {} took {:.3f}s".format(
                 epoch + 1, num_epochs, time.time() - start_time))
