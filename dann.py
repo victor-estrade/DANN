@@ -75,17 +75,18 @@ class ShallowDANN(object):
             logger = new_logger()
 
         logger.info("Starting training...")
+        final_stats = {
+                'domain training loss': [], 'domain training acc': [],
+                'domain valid loss': [], 'domain valid acc': [],
+                'source training loss': [], 'source training acc': [],
+                'source valid loss': [], 'source valid acc': [],
+                'target training loss': [], 'target training acc': [],
+                'target valid loss': [], 'target valid acc': [],
+                }
 
         for epoch in range(num_epochs):
             start_time = time.time()
-            stats = {
-                    'domain training loss': [], 'domain training acc': [],
-                    'domain valid loss': [], 'domain valid acc': [],
-                    'source training loss': [], 'source training acc': [],
-                    'source valid loss': [], 'source valid acc': [],
-                    'target training loss': [], 'target training acc': [],
-                    'target valid loss': [], 'target valid acc': [],
-                    }
+            stats = { key:[] for key in final_stats.keys()}
             # training (forward and backward propagation)
             source_batches = iterate_minibatches(source['X_train'], source['y_train'], source['batchsize'], shuffle=True)
             domain_batches = iterate_minibatches(domain['X_train'], domain['y_train'], domain['batchsize'], shuffle=True)
@@ -124,8 +125,13 @@ class ShallowDANN(object):
                 epoch + 1, num_epochs, time.time() - start_time))
             for stat_name, stat_value in sorted(stats.items()):
                 if stat_value:
+                    mean_value = np.mean(stat_value)
                     logger.info('   {:30} : {:.6f}'.format(
-                        stat_name, np.mean(stat_value)))
+                        stat_name, mean_value))
+                    final_stats[stat_name].append(mean_value)
+
+        return final_stats
+
 
 
 class DenseDANN(object):
@@ -189,17 +195,18 @@ class DenseDANN(object):
             logger = new_logger()
 
         logger.info("Starting training...")
+        final_stats = {
+                'domain training loss': [], 'domain training acc': [],
+                'domain valid loss': [], 'domain valid acc': [],
+                'source training loss': [], 'source training acc': [],
+                'source valid loss': [], 'source valid acc': [],
+                'target training loss': [], 'target training acc': [],
+                'target valid loss': [], 'target valid acc': [],
+                }
 
         for epoch in range(num_epochs):
             start_time = time.time()
-            stats = {
-                    'domain training loss': [], 'domain training acc': [],
-                    'domain valid loss': [], 'domain valid acc': [],
-                    'source training loss': [], 'source training acc': [],
-                    'source valid loss': [], 'source valid acc': [],
-                    'target training loss': [], 'target training acc': [],
-                    'target valid loss': [], 'target valid acc': [],
-                    }
+            stats = { key:[] for key in final_stats.keys()}
             # training (forward and backward propagation)
             source_batches = iterate_minibatches(source['X_train'], source['y_train'], source['batchsize'], shuffle=True)
             domain_batches = iterate_minibatches(domain['X_train'], domain['y_train'], domain['batchsize'], shuffle=True)
@@ -238,8 +245,12 @@ class DenseDANN(object):
                 epoch + 1, num_epochs, time.time() - start_time))
             for stat_name, stat_value in sorted(stats.items()):
                 if stat_value:
+                    mean_value = np.mean(stat_value)
                     logger.info('   {:30} : {:.6f}'.format(
-                        stat_name, np.mean(stat_value)))
+                        stat_name, mean_value))
+                    final_stats[stat_name].append(mean_value)
+
+        return final_stats
 
 
 if __name__ == '__main__':
