@@ -66,7 +66,7 @@ def blend(img1, img2):
     Merge two images:
         img_final = |img_1 - img_2|
 
-    Warning : Do not input uint8 arrays, the computation is overflow sensitive.
+    Warning : Do not input uint8 arrays, the computation is overflow sensitive
 
     Params
     ------
@@ -104,15 +104,15 @@ def load_mnist():
     f.close()
     return train_S, valid_S, test_S
 
-
-def load_mnistM(shape=(-1, 28, 28, 3), batchsize=500):
+def load_mnist_invert(roll=True, batchsize=500):
     """
-    Load the MNIST / MNIST-M problem
+    Load the MNIST / 1-MNIST problem
 
     Params
     ------
-        shape: (default=(-1, 28, 28, 3)) the output shape of the data.
-            Should be (-1, 3, 28, 28) to be used by convolution layers.
+        shape: (default=(-1, 1, 28, 28)) the output shape of the data.
+        batchsize: (default=500) the batch size.
+
     Return
     ------
         source_data: dict with the separated data
@@ -121,11 +121,78 @@ def load_mnistM(shape=(-1, 28, 28, 3), batchsize=500):
 
     """
     source = load_mnist() # Load the raw MNIST data
-    train_S, valid_S, test_S = source
+    train_S, val_S, test_S = source
+    
+    X_train, y_train = train_S
+    X_val, y_val = val_S
+    X_test, y_test = test_S
+
+    if roll:
+        X_train = np.rollaxis(X_train, 3, 1)
+        X_val = np.rollaxis(X_val, 3, 1)
+        X_test = np.rollaxis(X_test, 3, 1)
+
+    X_t_val, y_t_val = (1-X_val), y_val
+    X_t_train, y_t_train = (1-X_train), y_train
+    X_t_test, y_t_test = (1-X_test), y_test
+    
+    source_data = {
+                    'X_train': X_train,
+                    'y_train': y_train,
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize,
+                    }
+
+    target_data = {
+                    'X_train': X_t_train,
+                    'y_train': y_t_train,
+                    'X_val': X_t_val,
+                    'y_val': y_t_val,
+                    'X_test': X_t_test,
+                    'y_test': y_t_test,
+                    'batchsize':batchsize,
+                    }
+
+    X_train , y_train = domain_X_y([X_train, X_t_train])
+    X_val , y_val = domain_X_y([X_val, X_t_val])
+    X_test , y_test = domain_X_y([X_test, X_t_test])
+    domain_data = {
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize*2,
+                    }
+
+    return source_data, target_data, domain_data
+
+
+def load_mnistM(roll=True, batchsize=500):
+    """
+    Load the MNIST / MNIST-M problem
+
+    Params
+    ------
+        roll: (default=True) roll the output shape of the data. 
+            Default shape = (-1, 28, 28, 3) but if roll is True it 
+            will be (-1, 3, 28, 28) to be used by convolution layers.
+    Return
+    ------
+        source_data: dict with the separated data
+        target_data: dict with the separated data
+        domain_data: dict with the separated data
+
+    """
+    source = load_mnist() # Load the raw MNIST data
     # Blend the MNIST image to build the MNIST-M dataset
     data = tuple((mnist_blend(X) + (y,) for X, y in source))
-    target = tuple(((d[1].reshape(shape), d[2]) for d in data))
-    source = tuple(((d[0].reshape(shape), d[2]) for d in data))
+    target = tuple(((np.rollaxis(d[1], 3, 1), d[2]) for d in data))
+    source = tuple(((np.rollaxis(d[0], 3, 1), d[2]) for d in data))
 
     train_S, val_S, test_S = source
     train_T, val_T, test_T = target
