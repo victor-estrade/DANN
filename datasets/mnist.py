@@ -17,7 +17,23 @@ from scipy import misc
 np.random.seed(12345)
 
 # ============================================================================
-#                   MNIST & MNIST-M
+#                   MNIST
+# ============================================================================
+def load_mnist():
+    """
+    Load the raw MNIST dataset
+
+    Return
+    ------
+        train, valid, test: the datasets, couples of numpy arrays (X, y). 
+    """
+    f = gzip.open(os.path.join(data_dir, 'mnist.pkl.gz'), 'rb')
+    train_S, valid_S, test_S = pickle.load(f)
+    f.close()
+    return train_S, valid_S, test_S
+
+# ============================================================================
+#                   MNIST-M
 # ============================================================================
 data_dir = os.path.dirname(__file__)
 data_dir = os.path.join(data_dir, 'data')
@@ -91,87 +107,6 @@ def mnist_blend(data):
     return data, new
 
 
-def load_mnist():
-    """
-    Load the raw MNIST dataset
-
-    Return
-    ------
-        train, valid, test: the datasets, couples of numpy arrays (X, y). 
-    """
-    f = gzip.open(os.path.join(data_dir, 'mnist.pkl.gz'), 'rb')
-    train_S, valid_S, test_S = pickle.load(f)
-    f.close()
-    return train_S, valid_S, test_S
-
-def load_mnist_invert(roll=True, batchsize=500):
-    """
-    Load the MNIST / 1-MNIST problem
-
-    Params
-    ------
-        shape: (default=(-1, 1, 28, 28)) the output shape of the data.
-        batchsize: (default=500) the batch size.
-
-    Return
-    ------
-        source_data: dict with the separated data
-        target_data: dict with the separated data
-        domain_data: dict with the separated data
-
-    """
-    source = load_mnist() # Load the raw MNIST data
-    train_S, val_S, test_S = source
-    
-    X_train, y_train = train_S
-    X_val, y_val = val_S
-    X_test, y_test = test_S
-
-    if roll:
-        X_train = np.rollaxis(X_train, 3, 1)
-        X_val = np.rollaxis(X_val, 3, 1)
-        X_test = np.rollaxis(X_test, 3, 1)
-
-    X_t_val, y_t_val = (1-X_val), y_val
-    X_t_train, y_t_train = (1-X_train), y_train
-    X_t_test, y_t_test = (1-X_test), y_test
-    
-    source_data = {
-                    'X_train': X_train,
-                    'y_train': y_train,
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize,
-                    }
-
-    target_data = {
-                    'X_train': X_t_train,
-                    'y_train': y_t_train,
-                    'X_val': X_t_val,
-                    'y_val': y_t_val,
-                    'X_test': X_t_test,
-                    'y_test': y_t_test,
-                    'batchsize':batchsize,
-                    }
-
-    X_train , y_train = domain_X_y([X_train, X_t_train])
-    X_val , y_val = domain_X_y([X_val, X_t_val])
-    X_test , y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
-    return source_data, target_data, domain_data
-
-
 def load_mnistM(roll=True, batchsize=500):
     """
     Load the MNIST / MNIST-M problem
@@ -242,12 +177,156 @@ def load_mnistM(roll=True, batchsize=500):
     return source_data, target_data, domain_data
 
 
+# ============================================================================
+#                   MNIST-invert black & white
+# ============================================================================
+
+def load_mnist_invert(roll=True, batchsize=500):
+    """
+    Load the MNIST / 1-MNIST problem
+
+    Params
+    ------
+        TODO : Roll ou shape ?
+        batchsize: (default=500) the batch size.
+
+    Return
+    ------
+        source_data: dict with the separated data
+        target_data: dict with the separated data
+        domain_data: dict with the separated data
+
+    """
+    source = load_mnist() # Load the raw MNIST data
+    train_S, val_S, test_S = source
+    
+    X_train, y_train = train_S
+    X_val, y_val = val_S
+    X_test, y_test = test_S
+
+    X_train = X_train.reshape(-1, 28, 28)
+    X_val = X_val.reshape(-1, 28, 28)
+    X_test = X_test.reshape(-1, 28, 28)
+
+    X_t_val, y_t_val = (1-X_val), y_val
+    X_t_train, y_t_train = (1-X_train), y_train
+    X_t_test, y_t_test = (1-X_test), y_test
+    
+    source_data = {
+                    'X_train': X_train,
+                    'y_train': y_train,
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize,
+                    }
+
+    target_data = {
+                    'X_train': X_t_train,
+                    'y_train': y_t_train,
+                    'X_val': X_t_val,
+                    'y_val': y_t_val,
+                    'X_test': X_t_test,
+                    'y_test': y_t_test,
+                    'batchsize':batchsize,
+                    }
+
+    X_train , y_train = domain_X_y([X_train, X_t_train])
+    X_val , y_val = domain_X_y([X_val, X_t_val])
+    X_test , y_test = domain_X_y([X_test, X_t_test])
+    domain_data = {
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize*2,
+                    }
+
+    return source_data, target_data, domain_data
+
+
+# ============================================================================
+#                   MNIST-Mirror
+# ============================================================================
+
+def load_mnist_mirror(roll=True, batchsize=500):
+    """
+    Load the MNIST / 1-MNIST problem
+
+    Params
+    ------
+        shape: (default=(-1, 1, 28, 28)) the output shape of the data.
+        batchsize: (default=500) the batch size.
+
+    Return
+    ------
+        source_data: dict with the separated data
+        target_data: dict with the separated data
+        domain_data: dict with the separated data
+
+    """
+    source = load_mnist() # Load the raw MNIST data
+    train_S, val_S, test_S = source
+    
+    X_train, y_train = train_S
+    X_val, y_val = val_S
+    X_test, y_test = test_S
+    
+    X_train = X_train.reshape(-1, 28, 28)
+    X_val = X_val.reshape(-1, 28, 28)
+    X_test = X_test.reshape(-1, 28, 28)
+
+    X_t_train, y_t_train = np.fliplr(X_train), y_train
+    X_t_val, y_t_val = np.fliplr(X_val), y_val
+    X_t_test, y_t_test = np.fliplr(X_test), y_test
+    
+    source_data = {
+                    'X_train': X_train,
+                    'y_train': y_train,
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize,
+                    }
+
+    target_data = {
+                    'X_train': X_t_train,
+                    'y_train': y_t_train,
+                    'X_val': X_t_val,
+                    'y_val': y_t_val,
+                    'X_test': X_t_test,
+                    'y_test': y_t_test,
+                    'batchsize':batchsize,
+                    }
+
+    X_train , y_train = domain_X_y([X_train, X_t_train])
+    X_val , y_val = domain_X_y([X_val, X_t_val])
+    X_test , y_test = domain_X_y([X_test, X_t_test])
+    domain_data = {
+                    'X_train': X_train,
+                    'y_train': y_train, 
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize':batchsize*2,
+                    }
+
+    return source_data, target_data, domain_data
+
+
 if __name__ == '__main__':
     print('I am at your service, master.')
-    source, target, domain = load_mnistM()
+    # source, target, domain = load_mnistM()
+    # source, target, domain = load_mnist_invert(roll=False)
+    source, target, domain = load_mnist_mirror()
     X_S, y_S = source['X_train'], source['y_train']
     X_T, y_T = target['X_train'], target['y_train']
-
+    np.random.seed(None)
     i = np.random.randint(X_S.shape[0])
 
     plt.imshow(X_S[i])
