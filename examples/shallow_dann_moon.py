@@ -56,7 +56,20 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     dann.compile_domain(compiler_sgd_mom(lr=domain_rate, mom=0))
 
     # Train the NN
-    dann.training(source_data, domain_data, num_epochs=num_epochs)
+    stats = dann.training(source_data, domain_data, target=target_data, num_epochs=num_epochs)
+
+    # Plot learning accuracy curve
+    fig, ax = plt.subplots()
+    ax.plot(stats['source valid acc'], label='source')
+    ax.plot(stats['target valid acc'], label='target')
+    ax.set_xlabel('epoch')
+    ax.set_ylabel('accuracy')
+    ax.set_ylim(0., 100.0)
+    ax.set_title(title)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+    fig.clf() # Clear plot window
 
     # Plot boundary :
     X = np.vstack([source_data['X_train'], source_data['X_val'], source_data['X_test'], ])
