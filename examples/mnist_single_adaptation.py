@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import theano.tensor as T
 
-from datasets import load_mnistM
+from datasets import load_mnistM, load_mnist_invert
 # from nn_compilers import compile_sgd
 from logs import log_fname, new_logger
 from run import Path, training, plot_bound
@@ -114,13 +114,15 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=0.1, domain_rate=0.1):
     The main function.
     """
     # Moon Dataset
-    data_name = 'MNIST'
+    data_name = 'MNIST-invert'
     batchsize = 500
-    source_data, target_data, domain_data = load_mnistM(shape=(-1, 3, 28, 28))
+    source_data, target_data, domain_data = load_mnist_invert(shape=(-1, 1, 28, 28))
+    # source_data, target_data, domain_data = load_mnistM(shape=(-1, 3, 28, 28))
+
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor4('inputs')
     target_var = T.ivector('targets')
-    shape = (None, 3, 28, 28)
+    shape = (None, 1, 28, 28)
 
     # Set up the training :
     datas = [source_data, domain_data, target_data]
