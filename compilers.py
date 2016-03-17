@@ -42,7 +42,7 @@ def compiler_sgd_mom(lr=1, mom=.9) :
         # Create update expressions for training, i.e., how to modify the
         # parameters at each training step. Here, we'll use Stochastic Gradient
         # Descent and add a momentum to it.
-        params = lasagne.layers.get_all_params(output_layer)
+        params = lasagne.layers.get_all_params(output_layer, trainable=True)
         updates = lasagne.updates.sgd(loss, params, learning_rate=lr)
         updates = lasagne.updates.apply_momentum(updates, params, momentum=mom)
 
