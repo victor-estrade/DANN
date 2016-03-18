@@ -86,14 +86,21 @@ class AbstractDANN(object):
                 stats['domain valid loss'].append(loss)
                 stats['domain valid acc'].append(acc*100)
 
+            target_batches = iterate_minibatches(target['X_train'], target['y_train'], target['batchsize'])
             if target is not None:
-                loss, acc = self.valid_label(target['X_train'], target['y_train'])
-                stats['target training loss'].append(loss)
-                stats['target training acc'].append(acc*100)
+                for target_batch in target_batches:
+                    X, y = target_batch
+                    loss, acc = self.valid_label(X, y)
+                    stats['target training loss'].append(loss)
+                    stats['target training acc'].append(acc*100)
 
-                loss, acc = self.valid_label(target['X_val'], target['y_val'])
-                stats['target valid loss'].append(loss)
-                stats['target valid acc'].append(acc*100)
+            target_batches = iterate_minibatches(target['X_val'], target['y_val'], target['batchsize'])
+            if target is not None:
+                for target_batch in target_batches:
+                    X, y = target_batch
+                    loss, acc = self.valid_label(target['X_val'], target['y_val'])
+                    stats['target valid loss'].append(loss)
+                    stats['target valid acc'].append(acc*100)
 
             logger.info("Epoch {} of {} took {:.3f}s".format(
                 epoch + 1, num_epochs, time.time() - start_time))
@@ -179,7 +186,7 @@ class DenseDANN(AbstractDANN):
         for nb_units in arch:
             feature = lasagne.layers.DenseLayer(
                     feature,
-                    num_units=self.nb_units,
+                    num_units=nb_units,
                     nonlinearity=lasagne.nonlinearities.tanh,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
@@ -203,6 +210,71 @@ class DenseDANN(AbstractDANN):
                 # W=lasagne.init.GlorotUniform(),
                 )
 
+class ConvDANN(AbstractDANN):
+    """
+    A shallow DANN
+    """
+
+    def __init__(self, nb_units, nb_output, input_layer, nb_domain=2, hp_lambda=0):
+        
+        self.nb_output = nb_output
+        self.nb_domain = nb_domain
+        self.hp_lambda = hp_lambda
+        self.input_layer = input_layer
+        self.nb_units = nb_units
+        self.target_var = T.ivector('targets')
+        self._build()
+
+    def _build(self) :
+        """
+        Build the architecture of the neural network
+        """
+        feature = self.input_layer
+
+        # Convolutional layer with 32 kernels of size 5x5.
+        feature = lasagne.layers.Conv2DLayer(
+                feature, num_filters=32, filter_size=(5, 5),
+                nonlinearity=lasagne.nonlinearities.rectify,
+                W=lasagne.init.GlorotUniform('relu'),
+                )
+        # Max-pooling layer of factor 2 in both dimensions:
+        feature = lasagne.layers.MaxPool2DLayer(feature, pool_size=(2, 2))
+
+        # Another Convolutional layer with 32 kernels of size 5x5.
+        # feature = lasagne.layers.Conv2DLayer(
+        #         feature, num_filters=32, filter_size=(5, 5),
+        #         nonlinearity=lasagne.nonlinearities.rectify,
+        #         W=lasagne.init.GlorotUniform('relu'),
+        #         )
+        # Max-pooling layer of factor 2 in both dimensions:
+        # feature = lasagne.layers.MaxPool2DLayer(feature, pool_size=(2, 2))
+
+        feature = lasagne.layers.DenseLayer(
+                feature,
+                num_units=self.nb_units,
+                nonlinearity=lasagne.nonlinearities.rectify,
+                # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+                )
+
+        self.feature = feature
+        # Reversal gradient layer
+        self.RGL = ReverseGradientLayer(self.feature, hp_lambda=self.hp_lambda)
+
+        # Label classifier
+        self.label_predictor = lasagne.layers.DenseLayer(
+                self.feature,
+                num_units=self.nb_output,
+                nonlinearity=lasagne.nonlinearities.softmax,
+                # W=lasagne.init.GlorotUniform(),
+                )
+        # Domain predictor
+        self.domain_predictor = lasagne.layers.DenseLayer(
+                self.RGL,
+                # domain_hidden,
+                num_units=self.nb_domain,
+                nonlinearity=lasagne.nonlinearities.softmax,
+                # W=lasagne.init.GlorotUniform(),
+                )
 
 
 if __name__ == '__main__':

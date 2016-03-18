@@ -10,7 +10,7 @@ import numpy as np
 import cPickle as pickle
 import matplotlib.pyplot as plt
 
-from utils import domain_X_y
+from utils import domain_X_y, make_domain_dataset
 from glob import glob
 from scipy import misc
 
@@ -32,7 +32,8 @@ def load_mnist():
     f.close()
     return train_S, valid_S, test_S
 
-def load_mnist_src(batchsize=500):
+
+def load_mnist_src(batchsize=500, shape=(-1, 28, 28)):
     """
     Load the MNIST / 1-MNIST problem
 
@@ -45,16 +46,15 @@ def load_mnist_src(batchsize=500):
         source_data: dict with the separated data
 
     """
-    source = load_mnist() # Load the raw MNIST data
-    train_S, val_S, test_S = source
-    
+    train_S, val_S, test_S = load_mnist() # Load the raw MNIST data
+
     X_train, y_train = train_S
     X_val, y_val = val_S
     X_test, y_test = test_S
     
-    X_train = X_train.reshape(-1, 28, 28)
-    X_val = X_val.reshape(-1, 28, 28)
-    X_test = X_test.reshape(-1, 28, 28)
+    X_train = X_train.reshape(shape)
+    X_val = X_val.reshape(shape)
+    X_test = X_test.reshape(shape)
  
     source_data = {
                     'X_train': X_train,
@@ -67,6 +67,7 @@ def load_mnist_src(batchsize=500):
                     }
     return source_data
 
+
 # ============================================================================
 #                   MNIST-M
 # ============================================================================
@@ -76,6 +77,8 @@ data_dir = os.path.join(data_dir, 'data')
 # Get every images files from the BSR-BSDS500 training dataset
 bsr = os.path.join(data_dir, 'BSR/BSDS500/data/images/train/*.jpg')
 bsr = glob(bsr)
+# Mnist-M path
+mnistM_path = os.path.join(data_dir, 'mnistM.pkl.gz')
 
 
 def to_rgb(im):
@@ -136,13 +139,54 @@ def mnist_blend(data):
     """
     data = to_rgb(data.reshape(-1, 28, 28))
     new = np.empty_like(data)
-    new[:, ...] = blend(data[:], patch())
-    data = data.reshape(data.shape[0], -1)
-    new = new.reshape(new.shape[0], -1)
-    return data, new
+    for i in range(new.shape[0]):
+        if i % 1000 == 0:
+            print(i, '/', new.shape[0])
+        new[i, ...] = blend(data[i], patch())
+    return new
 
 
-def load_mnistM(roll=True, batchsize=500):
+def build_mnistM():
+    """
+    Build the Mnist-M dataset
+    """
+    print('Building the MNIST-M dataset')
+    source = load_mnist() # Load the raw MNIST data
+    # Blend the MNIST image to build the MNIST-M dataset
+    target = tuple(((np.rollaxis(mnist_blend(X), 3, 1), y) for X, y in source))
+    train_T, val_T, test_T = target
+
+    X_t_train, y_t_train = train_T
+    X_t_val, y_t_val = val_T
+    X_t_test, y_t_test = test_T
+    target_data = {
+                    'X_train': X_t_train,
+                    'y_train': y_t_train,
+                    'X_val': X_t_val,
+                    'y_val': y_t_val,
+                    'X_test': X_t_test,
+                    'y_test': y_t_test,
+                    'batchsize':500,
+                    }
+    print('Saving MNIST-M dataset to', mnistM_path)
+    f = gzip.open(mnistM_path,'wb')
+    pickle.dump(target_data, f)
+    f.close()
+    return target_data
+
+
+def load_mnistM():
+    if os.path.isfile(mnistM_path):
+        f = gzip.open(mnistM_path, 'rb')
+        target = pickle.load(f)
+        f.close()
+        return target
+    else:
+        target = build_mnistM()
+        return target
+
+
+def load_mnist_M(roll=True, batchsize=500):
     """
     Load the MNIST / MNIST-M problem
 
@@ -158,23 +202,16 @@ def load_mnistM(roll=True, batchsize=500):
         domain_data: dict with the separated data
 
     """
+    raise NotImplementedError('Big Bug found. Fix in progress.')
     source = load_mnist() # Load the raw MNIST data
-    # Blend the MNIST image to build the MNIST-M dataset
-    data = tuple((mnist_blend(X) + (y,) for X, y in source))
-    target = tuple(((np.rollaxis(d[1], 3, 1), d[2]) for d in data))
-    source = tuple(((np.rollaxis(d[0], 3, 1), d[2]) for d in data))
+    
+    source = tuple(((np.rollaxis(to_rgb(X.reshape(-1, 28, 28)), 3, 1), y)
+                    for X, y in source))
 
     train_S, val_S, test_S = source
-    train_T, val_T, test_T = target
-
     X_train, y_train = train_S
-    X_t_train, y_t_train = train_T
-
     X_val, y_val = val_S
-    X_t_val, y_t_val = val_T
-
     X_test, y_test = test_S
-    X_t_test, y_t_test = test_T
 
     source_data = {
                     'X_train': X_train,
@@ -185,30 +222,9 @@ def load_mnistM(roll=True, batchsize=500):
                     'y_test': y_test,
                     'batchsize':batchsize,
                     }
-
-    target_data = {
-                    'X_train': X_t_train,
-                    'y_train': y_t_train,
-                    'X_val': X_t_val,
-                    'y_val': y_t_val,
-                    'X_test': X_t_test,
-                    'y_test': y_t_test,
-                    'batchsize':batchsize,
-                    }
-
-    X_train , y_train = domain_X_y([X_train, X_t_train])
-    X_val , y_val = domain_X_y([X_val, X_t_val])
-    X_test , y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
+    target_data = load_mnistM()
+    target_data['batchsize'] = batchsize
+    domain_data = make_domain_dataset([source_data, target_data])
     return source_data, target_data, domain_data
 
 
@@ -216,7 +232,7 @@ def load_mnistM(roll=True, batchsize=500):
 #                   MNIST-invert black & white
 # ============================================================================
 
-def load_mnist_invert(roll=True, batchsize=500):
+def load_mnist_invert(roll=True, batchsize=500, shape=(-1, 28, 28)):
     """
     Load the MNIST / 1-MNIST problem
 
@@ -239,9 +255,9 @@ def load_mnist_invert(roll=True, batchsize=500):
     X_val, y_val = val_S
     X_test, y_test = test_S
 
-    X_train = X_train.reshape(-1, 28, 28)
-    X_val = X_val.reshape(-1, 28, 28)
-    X_test = X_test.reshape(-1, 28, 28)
+    X_train = X_train.reshape(shape)
+    X_val = X_val.reshape(shape)
+    X_test = X_test.reshape(shape)
 
     X_t_val, y_t_val = (1-X_val), y_val
     X_t_train, y_t_train = (1-X_train), y_train
@@ -267,19 +283,8 @@ def load_mnist_invert(roll=True, batchsize=500):
                     'batchsize':batchsize,
                     }
 
-    X_train , y_train = domain_X_y([X_train, X_t_train])
-    X_val , y_val = domain_X_y([X_val, X_t_val])
-    X_test , y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
+    domain_data = make_domain_dataset([source_data, target_data])
+    
     return source_data, target_data, domain_data
 
 
@@ -287,7 +292,7 @@ def load_mnist_invert(roll=True, batchsize=500):
 #                   MNIST-Mirror
 # ============================================================================
 
-def load_mnist_mirror(roll=True, batchsize=500):
+def load_mnist_mirror(roll=True, batchsize=500, shape=(-1, 28, 28)):
     """
     Load the MNIST / 1-MNIST problem
 
@@ -310,9 +315,9 @@ def load_mnist_mirror(roll=True, batchsize=500):
     X_val, y_val = val_S
     X_test, y_test = test_S
     
-    X_train = X_train.reshape(-1, 28, 28)
-    X_val = X_val.reshape(-1, 28, 28)
-    X_test = X_test.reshape(-1, 28, 28)
+    X_train = X_train.reshape(shape)
+    X_val = X_val.reshape(shape)
+    X_test = X_test.reshape(shape)
 
     X_t_train, y_t_train = np.fliplr(X_train), y_train
     X_t_val, y_t_val = np.fliplr(X_val), y_val
@@ -338,19 +343,8 @@ def load_mnist_mirror(roll=True, batchsize=500):
                     'batchsize':batchsize,
                     }
 
-    X_train , y_train = domain_X_y([X_train, X_t_train])
-    X_val , y_val = domain_X_y([X_val, X_t_val])
-    X_test , y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
+    domain_data = make_domain_dataset([source_data, target_data])
+    
     return source_data, target_data, domain_data
 
 

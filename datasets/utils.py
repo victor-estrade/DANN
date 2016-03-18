@@ -57,6 +57,35 @@ def domain_X_y(X_list, shuffle=True):
     return X, y
 
 
+def make_domain_dataset(datasets):
+    """
+    Make a domain datasets out of the given datasets.
+
+    Params
+    ------
+        datasets: a list of datasets (dicts with the separated data)
+
+    Return
+    ------
+        domain_data: dict with the separated data
+    """
+    X_train, y_train = domain_X_y([t['X_train'] for t in datasets])
+    X_val, y_val = domain_X_y([t['X_val'] for t in datasets])
+    X_test, y_test = domain_X_y([t['X_test'] for t in datasets])
+    batchsize = sum([t['batchsize'] for t in datasets])
+    domain_data = {
+                'X_train': X_train,
+                'y_train': y_train, 
+                'X_val': X_val,
+                'y_val': y_val,
+                'X_test': X_test,
+                'y_test': y_test,
+                'batchsize':batchsize,
+                }
+
+    return domain_data
+
+
 def diag_dominant_matrix(size):
     """
     https://matthewhr.wordpress.com/2013/09/01/how-to-construct-an-invertible-matrix-just-choose-large-diagonals/

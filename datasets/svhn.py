@@ -9,14 +9,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io as io
-from utils import domain_X_y
 
 np.random.seed(12345)
 
 data_dir = os.path.dirname(__file__)
 data_dir = os.path.join(data_dir, 'data')
 
-def load_svhn(roll=True):
+def load_svhn_src(roll=True):
     """
     """
     data = io.loadmat(os.path.join(data_dir,'train_32x32.mat'))
@@ -38,8 +37,8 @@ def load_svhn(roll=True):
             'y_val': y_val,
             'X_test': X_test,
             'y_test': y_test,
-            'batchsize':500,
+            'batchsize':600,
             }
     return data
 
-load_svhn()
+load_svhn_src()
