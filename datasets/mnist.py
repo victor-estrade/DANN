@@ -293,7 +293,7 @@ def load_mnist_mirror(roll=True, batchsize=500):
 
     Params
     ------
-        shape: (default=(-1, 1, 28, 28)) the output shape of the data.
+        TODO roll vs shape problem 
         batchsize: (default=500) the batch size.
 
     Return
