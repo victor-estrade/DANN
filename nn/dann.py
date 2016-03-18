@@ -210,9 +210,10 @@ class DenseDANN(AbstractDANN):
                 # W=lasagne.init.GlorotUniform(),
                 )
 
+
 class ConvDANN(AbstractDANN):
     """
-    A shallow DANN
+    A Simple convolution DANN
     """
 
     def __init__(self, nb_units, nb_output, input_layer, nb_domain=2, hp_lambda=0):
@@ -270,7 +271,6 @@ class ConvDANN(AbstractDANN):
         # Domain predictor
         self.domain_predictor = lasagne.layers.DenseLayer(
                 self.RGL,
-                # domain_hidden,
                 num_units=self.nb_domain,
                 nonlinearity=lasagne.nonlinearities.softmax,
                 # W=lasagne.init.GlorotUniform(),

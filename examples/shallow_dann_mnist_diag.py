@@ -21,7 +21,7 @@ from logs import log_fname, new_logger
 from utils import plot_bound
 
 
-def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
+def main(hp_lambda=0.1, num_epochs=50, label_rate=1, domain_rate=1):
     """
     The main function.
     """
@@ -105,7 +105,7 @@ def parseArgs():
         default=50, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0.7, type=float, dest='hp_lambda')
+        default=0.01, type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')

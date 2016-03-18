@@ -105,7 +105,7 @@ def parseArgs():
         default=50, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0.7, type=float, dest='hp_lambda')
+        default=0.01, type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=0.01, type=float, dest='label_rate')
