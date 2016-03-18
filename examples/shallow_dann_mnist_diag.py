@@ -13,12 +13,12 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import load_mnist_src, diag_dataset
-from rgl import ReverseGradientLayer
+from datasets.mnist import load_mnist_src
+from datasets.utils import diag_dataset
+from nn.dann import ShallowDANN
+from nn.compilers import compiler_sgd_mom
 from logs import log_fname, new_logger
-from compilers import compiler_sgd_mom
 from utils import plot_bound
-from dann import ShallowDANN
 
 
 def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):

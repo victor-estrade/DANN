@@ -13,12 +13,12 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import load_moon, diag_dataset
-from rgl import ReverseGradientLayer
+from datasets.moon import load_moon
+from datasets.utils import diag_dataset
 from logs import log_fname, new_logger
-from compilers import compiler_sgd_mom
+from nn.dann import ShallowDANN
+from nn.compilers import compiler_sgd_mom
 from utils import plot_bound
-from dann import ShallowDANN
 
 
 def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):

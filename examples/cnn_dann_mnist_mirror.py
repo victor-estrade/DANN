@@ -13,12 +13,11 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets import load_mnist_mirror
-from rgl import ReverseGradientLayer
+from datasets.mnist import load_mnist_mirror
 from logs import log_fname, new_logger
-from compilers import compiler_sgd_mom
+from nn.dann import ConvDANN
+from nn.compilers import compiler_sgd_mom
 from utils import plot_bound
-from dann import ConvDANN
 
 
 def main(hp_lambda=0.0, num_epochs=50, label_rate=0.01, domain_rate=0.01):
