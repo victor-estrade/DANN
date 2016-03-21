@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from datasets.mnist import load_mnist_mirror
 from logs import log_fname, new_logger
-from nn.dann import ShallowDANN
+from nn.dann import ShallowDANN, DenseDANN
 from nn.compilers import compiler_sgd_mom
 from utils import plot_bound
 
@@ -32,7 +32,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     # Set up the training :
     datas = [source_data, domain_data, target_data]
 
-    model = 'ShallowDANN'
+    model = 'DenseDANN[250-50]'
 
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
     # f_log = log_fname(title)
@@ -48,7 +48,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
     # Build the neural network architecture
-    dann = ShallowDANN(50, 10, input_layer, hp_lambda=hp_lambda)
+    dann = DenseDANN([250, 50], 10, input_layer, hp_lambda=hp_lambda)
 
     logger.info('Compiling functions')
     dann.compile_label(compiler_sgd_mom(lr=label_rate, mom=0))
@@ -86,7 +86,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     ax.set_title('Target image (pred={})'.format(label))
     fig.savefig('fig/MNIST-sample.png')
     fig.clf() # Clear plot window
-    
+
 
 def parseArgs():
     """

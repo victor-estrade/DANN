@@ -183,7 +183,7 @@ class DenseDANN(AbstractDANN):
         Build the architecture of the neural network
         """
         feature = self.input_layer
-        for nb_units in arch:
+        for nb_units in self.arch:
             feature = lasagne.layers.DenseLayer(
                     feature,
                     num_units=nb_units,

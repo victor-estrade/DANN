@@ -34,7 +34,7 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
 
     model = 'ShallowDANN'
 
-    title = '{}-lambda-{:.4f}-{}'.format(model, hp_lambda, data_name)
+    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
     # f_log = log_fname(title)
     logger = new_logger()
     logger.info('Model: {}'.format(model))
