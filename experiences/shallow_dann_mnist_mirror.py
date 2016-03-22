@@ -17,7 +17,8 @@ from datasets.mnist import load_mnist_mirror
 from logs import log_fname, new_logger
 from nn.dann import ShallowDANN, DenseDANN
 from nn.compilers import compiler_sgd_mom
-from utils import plot_bound
+from utils import plot_bound, save_confusion_matrix
+from sklearn.metrics import confusion_matrix
 
 
 def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
@@ -87,6 +88,22 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     fig.savefig('fig/MNIST-sample.png')
     fig.clf() # Clear plot window
 
+    # Plot confusion matrices :
+    # Plot Target Test confusion matrix :
+    X, y = target_data['X_test'], target_data['y_test']
+    y_pred = np.asarray(dann.predict_label(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'TARGET-CM')
+    
+    # Plot Target Test confusion matrix :
+    X, y = target_data['X_test'], target_data['y_test']
+    y_pred = np.asarray(dann.predict_label(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'SOURCE-CM')
+
+    # Plot Domain Test confusion matrix :
+    X, y = domain_data['X_test'], domain_data['y_test']
+    y_pred = np.asarray(dann.predict_domain(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'DOMAIN-CM')
+    
 
 def parseArgs():
     """

@@ -68,6 +68,36 @@ def plot_bound(X, y, predict_fn):
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
 
+def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+    """
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(cm.shape[0])
+    plt.xticks(tick_marks, tick_marks, rotation=45)
+    plt.yticks(tick_marks, tick_marks)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+
+def save_confusion_matrix(y_test, y_pred, title='Confusion matrix', cmap=plt.cm.Blues):
+    """
+    http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
+    """
+    from sklearn.metrics import confusion_matrix
+
+    cm = confusion_matrix(y_test, y_pred)
+    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    
+    plot_confusion_matrix(cm, title=title)
+
+    plt.savefig('fig/'+title+'.png', bbox_inches='tight')
+    plt.clf() # Clear plot window
+    plt.close() # Clear plot window
+
 
 def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     """
