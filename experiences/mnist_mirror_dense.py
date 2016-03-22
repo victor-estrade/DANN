@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 from __future__ import division
 
 import theano
 import theano.tensor as T
 import lasagne
 
-import time
 import argparse
 
 import numpy as np
@@ -15,10 +13,58 @@ import matplotlib.pyplot as plt
 
 from datasets.mnist import load_mnist_mirror
 from logs import log_fname, new_logger
-from nn.dann import ShallowDANN, DenseDANN
+from nn.dann import AbstractDANN
+from nn.rgl import ReverseGradientLayer
 from nn.compilers import compiler_sgd_mom
 from utils import plot_bound, save_confusion_matrix
 from sklearn.metrics import confusion_matrix
+
+class DenseDANN(AbstractDANN):
+    """
+    A shallow DANN
+    """
+
+    def __init__(self, arch, nb_output, input_layer, nb_domain=2, hp_lambda=0):
+        
+        self.nb_output = nb_output
+        self.nb_domain = nb_domain
+        self.hp_lambda = hp_lambda
+        self.input_layer = input_layer
+        self.arch = arch
+        self.target_var = T.ivector('targets')
+        self._build()
+
+    def _build(self) :
+        """
+        Build the architecture of the neural network
+        """
+        feature = self.input_layer
+        for nb_units in self.arch:
+            feature = lasagne.layers.DenseLayer(
+                    lasagne.layers.DropoutLayer(feature),
+                    num_units=nb_units,
+                    nonlinearity=lasagne.nonlinearities.rectify,
+                    # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+                    )
+        self.feature = feature
+        # Reversal gradient layer
+        self.RGL = ReverseGradientLayer(self.feature, hp_lambda=self.hp_lambda)
+        
+        # Label classifier
+        self.label_predictor = lasagne.layers.DenseLayer(
+                self.feature,
+                num_units=self.nb_output,
+                nonlinearity=lasagne.nonlinearities.softmax,
+                # W=lasagne.init.GlorotUniform(),
+                )
+        # Domain predictor
+        self.domain_predictor = lasagne.layers.DenseLayer(
+                self.RGL,
+                # domain_hidden,
+                num_units=self.nb_domain,
+                nonlinearity=lasagne.nonlinearities.softmax,
+                # W=lasagne.init.GlorotUniform(),
+                )
 
 
 def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
@@ -33,7 +79,9 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     # Set up the training :
     datas = [source_data, domain_data, target_data]
 
-    model = 'DenseDANN[250-50]'
+    n_features = 28*28
+    arch = [n_features//2, n_features//4, n_features//8]
+    model = 'DenseDANN[{}]'.format('-'.join([str(v) for v in arch]))
 
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
     # f_log = log_fname(title)
@@ -49,7 +97,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
     # Build the neural network architecture
-    dann = DenseDANN([250, 50], 10, input_layer, hp_lambda=hp_lambda)
+    dann = DenseDANN(arch, 10, input_layer, hp_lambda=hp_lambda)
 
     logger.info('Compiling functions')
     dann.compile_label(compiler_sgd_mom(lr=label_rate, mom=0))
@@ -90,7 +138,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
         ax.imshow(sample_trg, cmap='Greys_r')
         label = dann.predict_label(sample_trg[np.newaxis])[0]
         ax.set_title('Target image (pred={})'.format(label))
-    fig.savefig('fig/MNIST-sample.png')
+    fig.savefig('fig/MNIST-Mirror-sample.png')
     plt.close(fig) # Clear plot window
     
     # Plot confusion matrices :
@@ -127,13 +175,13 @@ def parseArgs():
         default=50, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0.7, type=float, dest='hp_lambda')
+        default=0.1, type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
-        default=1, type=float, dest='label_rate')
+        default=0.1, type=float, dest='label_rate')
     parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
-        default=1, type=float, dest='domain_rate')
+        default=0.01, type=float, dest='domain_rate')
 
     args = parser.parse_args()
     return args

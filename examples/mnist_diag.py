@@ -90,7 +90,7 @@ def main(hp_lambda=0.1, num_epochs=50, label_rate=1, domain_rate=1):
         ax.imshow(sample_trg, cmap='Greys_r')
         label = dann.predict_label(sample_trg[np.newaxis])[0]
         ax.set_title('Target image (pred={})'.format(label))
-    fig.savefig('fig/MNIST-sample.png')
+    fig.savefig('fig/MNIST-A-sample.png')
     plt.close(fig) # Clear plot window
 
     # Plot confusion matrices :
