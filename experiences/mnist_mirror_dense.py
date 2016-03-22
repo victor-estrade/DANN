@@ -70,8 +70,8 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
-    fig.clf() # Clear plot window
-
+    plt.close(fig) # Clear plot window
+    
     # Sample image:
     fig = plt.figure()
     n_sample = 4
@@ -91,8 +91,8 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1, domain_rate=1):
         label = dann.predict_label(sample_trg[np.newaxis])[0]
         ax.set_title('Target image (pred={})'.format(label))
     fig.savefig('fig/MNIST-sample.png')
-    fig.close() # Clear plot window
-
+    plt.close(fig) # Clear plot window
+    
     # Plot confusion matrices :
     # Plot Target Test confusion matrix :
     X, y = target_data['X_test'], target_data['y_test']
