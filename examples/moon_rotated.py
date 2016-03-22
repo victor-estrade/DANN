@@ -73,7 +73,6 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
     # Plot boundary :
     X = np.vstack([source_data['X_train'], source_data['X_val'], source_data['X_test'], ])
     y = np.hstack([source_data['y_train'], source_data['y_val'], source_data['y_test'], ])
-    colors = 'rb'
     plot_bound(X, y, dann.proba_label)
     plt.title('Moon bounds')
     plt.savefig('fig/moon-bound.png')
@@ -81,12 +80,19 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1, domain_rate=1):
 
     X = np.vstack([target_data['X_train'], target_data['X_val'], target_data['X_test'], ])
     y = np.hstack([target_data['y_train'], target_data['y_val'], target_data['y_test'], ])
-    colors = 'rb'
     plot_bound(X, y, dann.proba_label)
     plt.title('Moon rotated bounds')
     plt.savefig('fig/moon-rot-bound.png')
     plt.clf() # Clear plot window
 
+    X = np.vstack([target_data['X_train'], target_data['X_val'], target_data['X_test'],
+                    source_data['X_train'], source_data['X_val'], source_data['X_test'], ])
+    y = np.hstack([target_data['y_train'], target_data['y_val'], target_data['y_test'],
+                    source_data['y_train'], source_data['y_val'], source_data['y_test'], ])
+    plot_bound(X, y, dann.proba_label)
+    plt.title('Moon rot Mix bounds')
+    plt.savefig('fig/moon-rot-mix-bound.png')
+    plt.clf() # Clear plot window
 
 def parseArgs():
     """
