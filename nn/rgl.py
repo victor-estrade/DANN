@@ -53,3 +53,15 @@ class ReverseGradientLayer(lasagne.layers.Layer):
 
     def get_output_for(self, input, **kwargs):
         return self.op(input)
+
+    def set_lambda(self, hp_lambda):
+        """
+        Untested yet
+        """
+        self.hp_lambda.set_value(np.array(hp_lambda, dtype=theano.config.floatX))
+
+    def decay_lambda(self, decay):
+        """
+        Untested yet
+        """
+        self.hp_lambda.set_value(self.hp_lambda.get_value() * np.array(decay, dtype=theano.config.floatX))
