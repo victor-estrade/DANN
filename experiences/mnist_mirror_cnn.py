@@ -72,20 +72,41 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=0.01, domain_rate=0.01):
     fig.clf() # Clear plot window
 
     # Sample image:
-    i = np.random.RandomState().randint(source_data['X_test'].shape[0])
-    sample_src = source_data['X_test'][i]
-    sample_trg = target_data['X_test'][i]
     fig = plt.figure()
-    ax = fig.add_subplot(1, 2, 1)
-    ax.imshow(sample_src.reshape(28,28), cmap='Greys_r')
-    label = dann.predict_label(sample_src[np.newaxis])[0]
-    ax.set_title('Source image (pred={})'.format(label))
-    ax = fig.add_subplot(1, 2, 2)
-    ax.imshow(sample_trg.reshape(28,28), cmap='Greys_r')
-    label = dann.predict_label(sample_trg[np.newaxis])[0]
-    ax.set_title('Target image (pred={})'.format(label))
+    n_sample = 4
+    rand = np.random.RandomState()
+    for n in range(n_sample):
+        i = rand.randint(source_data['X_test'].shape[0])
+        sample_src = source_data['X_test'][i]
+        sample_trg = target_data['X_test'][i]
+        ax = fig.add_subplot(n_sample, 2, n*2+1)
+        ax.axis('off')
+        ax.imshow(sample_src, cmap='Greys_r')
+        label = dann.predict_label(sample_src[np.newaxis])[0]
+        ax.set_title('Source image (pred={})'.format(label))
+        ax = fig.add_subplot(n_sample, 2, n*2+2)
+        ax.axis('off')
+        ax.imshow(sample_trg, cmap='Greys_r')
+        label = dann.predict_label(sample_trg[np.newaxis])[0]
+        ax.set_title('Target image (pred={})'.format(label))
     fig.savefig('fig/MNIST-sample.png')
-    fig.clf() # Clear plot window
+    fig.close() # Clear plot window
+
+    # Plot confusion matrices :
+    # Plot Target Test confusion matrix :
+    X, y = target_data['X_test'], target_data['y_test']
+    y_pred = np.asarray(dann.predict_label(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'TARGET-CM')
+    
+    # Plot Target Test confusion matrix :
+    X, y = source_data['X_test'], source_data['y_test']
+    y_pred = np.asarray(dann.predict_label(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'SOURCE-CM')
+
+    # Plot Domain Test confusion matrix :
+    X, y = domain_data['X_test'], domain_data['y_test']
+    y_pred = np.asarray(dann.predict_domain(X)).reshape(-1)
+    save_confusion_matrix(y, y_pred, title=title+'DOMAIN-CM')
     
 
 def parseArgs():
