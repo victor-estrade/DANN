@@ -48,6 +48,7 @@ class Dense(object):
             layer_copy.b = layer_A.b
         return copy
 
+
 class Classifier(object):
     """
     A multiple dense layers ending by a classifier.
@@ -63,6 +64,8 @@ class Classifier(object):
         self.input_layer = input_layer
         self.arch = arch
         self.layers = []
+        self.nb_label = nb_label
+        
         l_tmp = self.input_layer
         for nb_units in arch:
             l_tmp = lasagne.layers.DenseLayer(
@@ -74,13 +77,13 @@ class Classifier(object):
             self.layers.append(l_tmp)
         self.l_output = lasagne.layers.DenseLayer(
                     l_tmp,
-                    num_units=nb_units,
+                    num_units=nb_label,
                     nonlinearity=lasagne.nonlinearities.softmax,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
 
     def copy(self, input_layer):
-        copy = Dense(input_layer, self.arch)
+        copy = Classifier(input_layer, self.arch, self.nb_label)
         for layer_A, layer_copy in zip(self.layers, copy.layers):
             layer_copy.W = layer_A.W
             layer_copy.b = layer_A.b

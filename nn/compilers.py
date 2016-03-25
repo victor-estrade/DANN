@@ -12,7 +12,7 @@ def compiler_sgd_mom(lr=1, mom=.9) :
     """
     Stochastic Gradient Descent compiler with optionnal momentum.
 
-    info: it uses the categorical_crossentropy
+    info: it uses the categorical_crossentropy. Should be given to a softmax layer.
     
     Params
     ------
@@ -22,14 +22,15 @@ def compiler_sgd_mom(lr=1, mom=.9) :
     Return
     ------
         compiler_function: a function that takes an output layer and return
-            -train function: function used to train the neural network
-            -predict function: funciton used to predict the label
-            -valid function: funciton used to get the accuracy and loss 
-            -proba function: funciton used to predict the label probabilities
+            a dictionnary with :
+            -train : function used to train the neural network
+            -predict : function used to predict the label
+            -valid : function used to get the accuracy and loss 
+            -output : function used to get the output (exm: predict the label probabilities)
     
     Example:
     --------
-    >>> dann.compile_label(compiler_sgd_mom(lr=0.01, mom=0.1)
+    >>> compiler = compiler_sgd_mom(lr=0.01, mom=0.1)
     
     """    
     def get_fun(output_layer, lr=1, mom=.9, target_var=T.ivector('target')):
@@ -67,8 +68,13 @@ def compiler_sgd_mom(lr=1, mom=.9) :
         # Compile a function computing the predicted labels:
         predict_function = theano.function([input_var], [label], allow_input_downcast=True)
         # Compile an output function
-        proba_function = theano.function([input_var], [pred], allow_input_downcast=True)
-
-        return train_function, predict_function, valid_function, proba_function
+        output_function = theano.function([input_var], [pred], allow_input_downcast=True)
+        
+        return {
+                'train': train_function,
+                'predict': predict_function,
+                'valid': valid_function,
+                'output': output_function
+               }
     
-    return(lambda output_layer: get_fun(output_layer, lr=lr, mom=mom))
+    return lambda output_layer: get_fun(output_layer, lr=lr, mom=mom)
