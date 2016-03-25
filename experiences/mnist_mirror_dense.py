@@ -38,7 +38,7 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=50, type=int, dest='num_epochs')
+        default=20, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0.1, type=float, dest='hp_lambda')

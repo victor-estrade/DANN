@@ -40,7 +40,7 @@ def parseArgs():
         default=0.7, type=float, dest='hp_lambda')
     parser.add_argument(
         '--angle', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=-35., type=float, dest='angle')
+        default=-30., type=float, dest='angle')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')
@@ -92,7 +92,7 @@ def main():
     # the data are the same.
     # We just have to be carefull with the given data at training 
     # and testing time to make it works like a DANN.
-    feature = Dense(input_layer, [5,])
+    feature = Dense(input_layer, [3,])
     label_clf = Classifier(feature.output_layer, 2)
     rgl = ReverseGradientLayer(feature.output_layer, hp_lambda=hp_lambda)
     domain_clf = Classifier(rgl, 2)
