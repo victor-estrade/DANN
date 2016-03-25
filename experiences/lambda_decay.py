@@ -4,6 +4,7 @@ from __future__ import division, print_function
 
 import theano
 import theano.tensor as T
+
 import lasagne
 
 import time
@@ -65,6 +66,8 @@ class BadNN(AbstractDANN):
             logger = new_logger()
 
         logger.info("Starting training...")
+        logger.info('hp_lambda = {}'.format(self.RGL.hp_lambda.get_value(borrow=True)))
+
         final_stats = {
                 'source training loss': [], 'source training acc': [],
                 'source valid loss': [], 'source valid acc': [],
@@ -82,14 +85,14 @@ class BadNN(AbstractDANN):
                 loss, acc = self.train_label(X, y)
                 stats['source training loss'].append(loss)
                 stats['source training acc'].append(acc*100)
-	
+    
 
             # Decay the hp_lambda
-            if epoch == (num_epochs//10):
-            	self.RGL.set_lambda(-1)
+            # if epoch == (num_epochs//10):
+            #     self.RGL.set_lambda(-1)
 
-	        # logger.info(self.feature.W.get_value())
-            logger.info('hp_lambda = {}'.format(self.RGL.hp_lambda.get_value()))
+            # logger.info(self.feature.W.get_value())
+            logger.info('hp_lambda = {}'.format(self.RGL.hp_lambda.get_value(borrow=True)))
 
             # Validation (forward propagation)
             source_batches = iterate_minibatches(source['X_val'], source['y_val'], source['batchsize'])
@@ -117,6 +120,7 @@ def main(hp_lambda=0.0, num_epochs=50, label_rate=1):
     """
     The main function.
     """
+
     # Moon Dataset
     data_name = 'Moon'
     batchsize = 32

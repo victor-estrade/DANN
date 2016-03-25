@@ -48,7 +48,9 @@ class ReverseGradient(theano.gof.Op):
 class ReverseGradientLayer(lasagne.layers.Layer):
     def __init__(self, incoming, hp_lambda, **kwargs):
         super(ReverseGradientLayer, self).__init__(incoming, **kwargs)
-        self.hp_lambda = theano.shared(np.array(hp_lambda, dtype=theano.config.floatX))
+        # self.hp_lambda = theano.sandbox.cuda.var.CudaNdarraySharedVariable(
+        #     'hp_lambda', theano.sandbox.cuda.var.CudaNdarrayType(theano.config.floatX), np.array(hp_lambda, dtype=theano.config.floatX), False)
+        self.hp_lambda = theano.shared(np.array(hp_lambda, dtype=theano.config.floatX), borrow=True)
         self.op = ReverseGradient(hp_lambda)
 
     def get_output_for(self, input, **kwargs):
@@ -56,12 +58,12 @@ class ReverseGradientLayer(lasagne.layers.Layer):
 
     def set_lambda(self, hp_lambda):
         """
-        Untested yet
+        Not yet working
         """
-        self.hp_lambda.set_value(np.array(hp_lambda, dtype=theano.config.floatX))
+        self.hp_lambda.set_value(np.array(hp_lambda, dtype=theano.config.floatX), borrow=True)
 
     def decay_lambda(self, decay):
         """
-        Untested yet
+        Not yet working
         """
-        self.hp_lambda.set_value(self.hp_lambda.get_value() * np.array(decay, dtype=theano.config.floatX))
+        self.hp_lambda.set_value(self.hp_lambda.get_value() * np.array(decay, dtype=theano.config.floatX), borrow=True)

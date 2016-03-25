@@ -68,6 +68,7 @@ def plot_bound(X, y, predict_fn):
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
 
+
 def plot_confusion_matrix(cm, title='Confusion matrix', cmap=plt.cm.Blues):
     """
     http://scikit-learn.org/stable/auto_examples/model_selection/plot_confusion_matrix.html
