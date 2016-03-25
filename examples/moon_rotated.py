@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # coding: utf-8
-
 from __future__ import division
 
 import theano
@@ -32,8 +31,7 @@ def parseArgs():
     """
     # Retrieve the arguments
     parser = argparse.ArgumentParser(
-        description="Reverse gradient example -- Example of the destructive"
-                    "power of the Reverse Gradient Layer")
+        description="Moon rotated adaptation example")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
         default=50, type=int, dest='num_epochs')
@@ -69,7 +67,7 @@ def main():
     # Set up the training :
     data_name = 'MoonRotated'
     batchsize = 32
-    model = 'ShallowDANN'
+    model = 'SimplestDANN'
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
 
     # Load Moon Dataset
@@ -95,26 +93,20 @@ def main():
     # We just have to be carefull with the given data at training 
     # and testing time to make it works like a DANN.
     feature = Dense(input_layer, [5,])
-    label_clf = Classifier(feature.l_output, 2)
-    rgl = ReverseGradientLayer(feature.l_output, hp_lambda=hp_lambda)
+    label_clf = Classifier(feature.output_layer, 2)
+    rgl = ReverseGradientLayer(feature.output_layer, hp_lambda=hp_lambda)
     domain_clf = Classifier(rgl, 2)
     
-    
+    # Compilation
     logger.info('Compiling functions')
-    label_trainner = Trainner(label_clf.l_output, compiler_sgd_mom(lr=label_rate, mom=0), 'source')
-    domain_trainner = Trainner(domain_clf.l_output, compiler_sgd_mom(lr=domain_rate, mom=0), 'domain')
-    target_trainner = Trainner(label_clf.l_output, compiler_sgd_mom(lr=label_rate, mom=0), 'target')
-    # TODO : remove
-    #target_trainner = Trainner(Classifier(feature.l_output, 2).l_output, compiler_sgd_mom(lr=label_rate, mom=0), 'target')
-
+    label_trainner = Trainner(label_clf.output_layer, compiler_sgd_mom(lr=label_rate, mom=0), 'source')
+    domain_trainner = Trainner(domain_clf.output_layer, compiler_sgd_mom(lr=domain_rate, mom=0), 'domain')
+    target_trainner = Trainner(label_clf.output_layer, compiler_sgd_mom(lr=label_rate, mom=0), 'target')
 
     # Train the NN
     stats = training([label_trainner, domain_trainner], [source_data, domain_data],
                      testers=[target_trainner,], test_data=[target_data],
                      num_epochs=num_epochs, logger=logger)
-    # TODO : remove
-    #stats = training([label_trainner, domain_trainner, target_trainner], [source_data, domain_data, target_data],
-    #                 num_epochs=num_epochs, logger=logger)
     
     # Plot learning accuracy curve
     fig, ax = plt.subplots()

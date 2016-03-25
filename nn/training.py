@@ -62,8 +62,8 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
                         for data in train_data)
         for minibatches in zip(*batches):
             for batch, trainer in zip(minibatches, trainers):
-                X, y = batch
-                loss, acc = trainer.train(X, y)
+                # X, y = batch
+                loss, acc = trainer.train(*batch)
                 stats[trainer.name+' training loss'].append(loss)
                 stats[trainer.name+' training acc'].append(acc*100)
         
@@ -73,8 +73,8 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
                         for data in train_data+test_data)
         for minibatches in zip(*batches):
             for batch, valider in zip(minibatches, trainers+testers):
-                X, y = batch
-                loss, acc = valider.valid(X, y)
+                # X, y = batch
+                loss, acc = valider.valid(*batch)
                 stats[valider.name+' valid loss'].append(loss)
                 stats[valider.name+' valid acc'].append(acc*100)
         

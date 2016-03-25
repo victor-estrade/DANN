@@ -18,7 +18,40 @@ from logs import log_fname, new_logger
 from utils import iterate_minibatches
 
 
-class Dense(object):
+class AbstractBlock(lasagne.layers.Layer):
+    """
+    The base class for Blocks.
+
+    TODO: Make the Blocks act likes a real Layer.
+
+    """
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, incoming, **kwargs):
+        incoming = self.get_input_layer(incoming)
+        super(AbstractBlock, self).__init__(incoming, **kwargs)
+        self.input_layer = incoming
+        self.output_layer = None
+
+    @abc.abstractmethod
+    def clone(self, input_layer) :
+        """
+        Create a clone of the block sharing its weights 
+        but taking a different input.
+        """
+        return
+
+    def get_input_layer(self, input_layer):
+        if isinstance(input_layer, AbstractBlock):
+            return input_layer.output_layer
+        elif isinstance(input_layer, lasagne.layers.Layer):
+            return input_layer
+        else:
+            raise ValueError("Input_layer should be a lasagne.layer.Layer "
+                             "or a Block. {} found".format(type(input_layer)))
+
+
+class Dense(AbstractBlock):
     """
     A multiple dense layers.
         
@@ -29,10 +62,14 @@ class Dense(object):
         nonlinearity: (default=tanh) the nonlinearity activation on every layers.
 
     """
-    def __init__(self, input_layer, arch, nonlinearity=lasagne.nonlinearities.tanh):
-        super(Dense, self).__init__()
-        self.input_layer = input_layer
+    def __init__(self, incoming, arch, nonlinearity=lasagne.nonlinearities.tanh, **kwargs):
+        incoming = self.get_input_layer(incoming)
+        super(Dense, self).__init__(incoming, **kwargs)
+        # Save everything to be able to clone
         self.arch = arch
+        self.nonlinearity = nonlinearity
+        self.kwargs = kwargs
+
         self.layers = []
         l_tmp = self.input_layer
         for nb_units in arch:
@@ -42,20 +79,24 @@ class Dense(object):
                     nonlinearity=nonlinearity,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
-            self.layers.append(l_tmp)
-            
-        self.l_output = l_tmp
+            self.layers.append(l_tmp)            
+        self.output_layer = l_tmp
 
-    def copy(self, input_layer):
-        copy = Dense(input_layer, self.arch)
-        for layer_A, layer_copy in zip(self.layers, copy.layers):
-            layer_copy.W = layer_A.W
-            layer_copy.b = layer_A.b
-        return copy
+    def clone(self, input_layer):
+        """
+        Create a clone of the block sharing its weights 
+        but taking a different input.
+        """
+        clone = Dense(input_layer, self.arch, self.nonlinearity, self.kwargs)
+        for layer_A, layer_clone in zip(self.layers, clone.layers):
+            layer_clone.W = layer_A.W
+            layer_clone.b = layer_A.b
+        clone.output_layer = clone.layers[-1]
+
+        return clone
 
 
-
-class Classifier(object):
+class Classifier(AbstractBlock):
     """
     A multiple dense layers ending by a classifier.
         
@@ -67,35 +108,42 @@ class Classifier(object):
         arch: (default=[]) a list of integer giving the number of nerones in the layers.
 
     """
-    def __init__(self, input_layer, nb_label, arch=[]):
-        super(Classifier, self).__init__()
-        self.input_layer = input_layer
-        self.arch = arch
-        self.layers = []
+    def __init__(self, incoming, nb_label, arch=[], 
+                nonlinearity=lasagne.nonlinearities.tanh, **kwargs):
+        super(Classifier, self).__init__(incoming, **kwargs)
+        # Save everything to be able to clone
         self.nb_label = nb_label
+        self.arch = arch
+        self.nonlinearity = nonlinearity
+        self.kwargs = kwargs
         
+        self.layers = []
         l_tmp = self.input_layer
         for nb_units in arch:
             l_tmp = lasagne.layers.DenseLayer(
                     l_tmp,
                     num_units=nb_units,
-                    nonlinearity=lasagne.nonlinearities.tanh,
+                    nonlinearity=nonlinearity,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
             self.layers.append(l_tmp)
-        self.l_output = lasagne.layers.DenseLayer(
+        self.output_layer = lasagne.layers.DenseLayer(
                     l_tmp,
                     num_units=nb_label,
                     nonlinearity=lasagne.nonlinearities.softmax,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
 
-    def copy(self, input_layer):
-        copy = Classifier(input_layer, self.nb_label, self.arch)
-        for layer_A, layer_copy in zip(self.layers, copy.layers):
-            layer_copy.W = layer_A.W
-            layer_copy.b = layer_A.b
-        copy.l_output.W = self.l_output.W
-        copy.l_output.b = self.l_output.b
+    def clone(self, input_layer):
+        """
+        Create a clone of the block sharing its weights 
+        but taking a different input.
+        """
+        clone = Classifier(input_layer, self.nb_label, self.arch)
+        for layer_A, layer_clone in zip(self.layers, clone.layers):
+            layer_clone.W = layer_A.W
+            layer_clone.b = layer_A.b
+        clone.output_layer.W = self.output_layer.W
+        clone.output_layer.b = self.output_layer.b
         
-        return copy
+        return clone

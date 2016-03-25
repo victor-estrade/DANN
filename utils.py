@@ -106,7 +106,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 
     Params
     ------
-        inputs: the data (numpy array)
+        inputs: the data (numpy array or tuple of numpy array)
         targets: the target values (numpy array)
         batchsize: the batch size (int)
         shuffle (default=False): whether or not the data should be shuffled
@@ -115,16 +115,27 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     ------
         (input_slice, target_slice) as a generator
     """
-    assert len(inputs) == len(targets)
+    # Handle multiple inputs :
+    if isinstance(inputs, tuple):
+        size = len(inputs[0])
+        for inpt in inputs:
+            assert size == len(inpt), 'Each input should have the same number of examples'
+        data = inputs + (targets,)
+    else:
+        size = len(inputs)
+        data = (inputs, targets)
+
+    assert size == len(targets), 'Each input examples should have a label'
+
     if shuffle:
-        indices = np.arange(len(inputs))
+        indices = np.arange(size)
         np.random.shuffle(indices)
-    for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+    for start_idx in range(0, size - batchsize + 1, batchsize):
         if shuffle:
             excerpt = indices[start_idx:start_idx + batchsize]
         else:
             excerpt = slice(start_idx, start_idx + batchsize)
-        yield inputs[excerpt], targets[excerpt]
+        yield tuple(arr[excerpt] for arr in data)
 
 
 if __name__ == '__main__':
