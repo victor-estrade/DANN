@@ -87,7 +87,7 @@ class Dense(AbstractBlock):
         Create a clone of the block sharing its weights 
         but taking a different input.
         """
-        clone = Dense(input_layer, self.arch, self.nonlinearity, self.kwargs)
+        clone = Dense(input_layer, self.arch, self.nonlinearity, **self.kwargs)
         for layer_A, layer_clone in zip(self.layers, clone.layers):
             layer_clone.W = layer_A.W
             layer_clone.b = layer_A.b
@@ -139,7 +139,7 @@ class Classifier(AbstractBlock):
         Create a clone of the block sharing its weights 
         but taking a different input.
         """
-        clone = Classifier(input_layer, self.nb_label, self.arch)
+        clone = Classifier(input_layer, self.nb_label, self.arch, **self.kwargs)
         for layer_A, layer_clone in zip(self.layers, clone.layers):
             layer_clone.W = layer_A.W
             layer_clone.b = layer_A.b
