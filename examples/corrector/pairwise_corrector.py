@@ -178,8 +178,6 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
     							 'corrector',)
-    # domain_trainner = Trainner(domain_clf.output_layer, squared_error_sgd_mom(lr=domain_rate, mom=0), 'domain')
-    # target_trainner = Trainner(label_clf.output_layer, squared_error_sgd_mom(lr=label_rate, mom=0), 'target')
 
     # Train the NN
     stats = training([corrector_trainner,], [corrector_data,],
@@ -197,7 +195,7 @@ def main():
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
     fig.clf() # Clear plot window
 
-    # Plot the data before
+    # Plot the source, target and corrected data
     from matplotlib.colors import ListedColormap
     import matplotlib.cm as cm
     cm_bright = ListedColormap(['#FF0000', '#0000FF'])
