@@ -372,30 +372,30 @@ def load_mnist_mirror(roll=True, batchsize=500, shape=(-1, 28, 28)):
     X_val, y_val = val_S
     X_test, y_test = test_S
     
-    X_train = X_train.reshape(shape)
-    X_val = X_val.reshape(shape)
-    X_test = X_test.reshape(shape)
+    X_train = X_train.reshape((-1, 28, 28))
+    X_val = X_val.reshape((-1, 28, 28))
+    X_test = X_test.reshape((-1, 28, 28))
 
     X_t_train, y_t_train = np.fliplr(X_train), y_train
     X_t_val, y_t_val = np.fliplr(X_val), y_val
     X_t_test, y_t_test = np.fliplr(X_test), y_test
     
     source_data = {
-                    'X_train': X_train,
+                    'X_train': X_train.reshape(shape),
                     'y_train': y_train,
-                    'X_val': X_val,
+                    'X_val': X_val.reshape(shape),
                     'y_val': y_val,
-                    'X_test': X_test,
+                    'X_test': X_test.reshape(shape),
                     'y_test': y_test,
                     'batchsize':batchsize,
                     }
 
     target_data = {
-                    'X_train': X_t_train,
+                    'X_train': X_t_train.reshape(shape),
                     'y_train': y_t_train,
-                    'X_val': X_t_val,
+                    'X_val': X_t_val.reshape(shape),
                     'y_val': y_t_val,
-                    'X_test': X_t_test,
+                    'X_test': X_t_test.reshape(shape),
                     'y_test': y_t_test,
                     'batchsize':batchsize,
                     }

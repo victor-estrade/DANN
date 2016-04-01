@@ -95,9 +95,14 @@ def main():
             nonlinearity=lasagne.nonlinearities.rectify,
             W=lasagne.init.GlorotUniform('relu'),
             )
-    # Max-pooling layer of factor 2 in both dimensions:
     feature = lasagne.layers.MaxPool2DLayer(feature, pool_size=(2, 2))
-    feature = Dense(feature, [50,])
+    feature = lasagne.layers.Conv2DLayer(
+            input_layer, num_filters=32, filter_size=(5, 5),
+            nonlinearity=lasagne.nonlinearities.rectify,
+            W=lasagne.init.GlorotUniform('relu'),
+            )
+    feature = lasagne.layers.MaxPool2DLayer(feature, pool_size=(2, 2))
+    feature = Dense(feature, [100,])
     label_clf = Classifier(feature.output_layer, 10)
     rgl = ReverseGradientLayer(feature.output_layer, hp_lambda=hp_lambda)
     domain_clf = Classifier(rgl, 2)
