@@ -13,13 +13,38 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from datasets.mnist import load_mnist_src
-from datasets.utils import random_mat_dataset
+from datasets.utils import diag_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier
-from nn.compilers import squared_error_sgd_mom
+from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
-from utils import plot_bound
+from utils import plot_bound, iterate_minibatches
+
+
+def classwise_shuffle(X, y):
+    """
+    Shuffle X without changing the class positions
+
+    Params
+    ------
+        X: the data (numpy array)
+        y: the labels 
+    Return
+    ------
+        X_shuffled: Shuffled X without changing the class matching
+    """
+    idx = np.empty_like(y, dtype=int)
+    for label in np.unique(y):
+        arr = np.where(y==label)[0]
+        arr2 = np.random.permutation(arr)
+        idx[arr] = arr2
+    return X[idx]
+
+
+def epoch_shuffle(self):
+    self['X_train'] = classwise_shuffle(self['X_train'], self['labels'])
+    return self
 
 
 def parseArgs():
@@ -36,13 +61,13 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=500, type=int, dest='num_epochs')
+        default=100, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
-        default=10, type=float, dest='label_rate')
+        default=2, type=float, dest='label_rate')
     parser.add_argument(
         '--label-mom', help="The learning rate momentum of the label part of the neural network ",
         default=0.9, type=float, dest='label_mom')
@@ -71,22 +96,23 @@ def main():
     domain_mom = args.domain_mom
 
     # Set up the training :
-    data_name = 'MNISTRMat'
+    data_name = 'MNISTDiag'
     batchsize = 500
-    model = 'PairWiseCorrector'
+    model = 'ClassWiseCorrector'
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
     source_data = load_mnist_src()
-    source_data, target_data, domain_data = random_mat_dataset(source_data, normalize=True)
-
+    source_data, target_data, domain_data = diag_dataset(source_data, normalize=True)
+    
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train': source_data['X_train'],
-    	'y_val': source_data['X_val'],
-    	'y_test': source_data['X_test'],
-        # 'batchsize':100,
-    	})
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
+        'labels': source_data['y_train']
+        })
+    corrector_data['prepare'] = epoch_shuffle
 
     # Prepare the logger :
     # f_log = log_fname(title)
@@ -104,30 +130,32 @@ def main():
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
-    # feature = lasagne.layers.DenseLayer(
-    #                 input_layer,
-    #                 num_units=np.prod(shape[1:]),
-    #                 nonlinearity=lasagne.nonlinearities.tanh,
-    #                 # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
-    #                 )
     feature = lasagne.layers.DenseLayer(
                     input_layer,
                     num_units=np.prod(shape[1:]),
                     nonlinearity=None,
-                    # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+                    W=lasagne.init.Uniform(range=0.0000001, std=None, mean=0.0),
                     )
     reshaper = lasagne.layers.ReshapeLayer(feature, (-1,) + shape[1:])
     output_layer = reshaper
+    if hp_lambda != 0.0:
+        rgl = ReverseGradientLayer(reshaper, hp_lambda=hp_lambda)
+        domain_clf = Classifier(rgl, 2)
     
     # Compilation
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, 
                                  squared_error_sgd_mom(lr=label_rate, mom=label_mom, target_var=target_var), 
-    							 'corrector',)
+                                 'corrector',)
+    if hp_lambda != 0.0:
+        domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=domain_mom), 'domain')
     
     # Train the NN
-    stats = training([corrector_trainner,], [corrector_data,],
-                     # testers=[target_trainner,], test_data=[target_data],
+    if hp_lambda != 0.0:
+        stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
+                         num_epochs=num_epochs, logger=logger)
+    else:
+        stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
     
     # Plot learning accuracy curve
@@ -166,6 +194,13 @@ def main():
     fig.savefig('fig/{}-sample.png'.format(title))
     plt.close(fig) # Clear plot window
 
+    # Plot the weights of the corrector
+    W = feature.W.get_value()
+    plt.imshow(W, interpolation='nearest', cmap=plt.cm.coolwarm)
+    plt.title(title)
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig('fig/{}-Weights.png'.format(title))
 
 if __name__ == '__main__':
     main()

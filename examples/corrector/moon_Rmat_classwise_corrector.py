@@ -263,7 +263,7 @@ def main():
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
 
 
 if __name__ == '__main__':

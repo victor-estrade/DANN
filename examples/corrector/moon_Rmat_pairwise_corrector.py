@@ -144,7 +144,7 @@ def main():
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap=cm_bright)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
 
 
 if __name__ == '__main__':

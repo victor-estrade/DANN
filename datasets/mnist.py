@@ -19,6 +19,7 @@ data_dir = os.path.dirname(__file__)
 data_dir = os.path.join(data_dir, 'data')
 if not os.path.isdir(data_dir):
 	os.mkdir(data_dir)
+
 # Get every images files from the BSR-BSDS500 training dataset
 bsr = os.path.join(data_dir, 'BSR/BSDS500/data/images/train/*.jpg')
 bsr = glob(bsr)
@@ -259,7 +260,7 @@ def load_mnist_M(roll=True, batchsize=500):
         domain_data: dict with the separated data
 
     """
-    raise NotImplementedError('Big Bug found. Fix in progress.')
+    raise NotImplementedError('Big Bug found !!!')
     source = load_mnist() # Load the raw MNIST data
     
     source = tuple(((np.rollaxis(to_rgb(X.reshape(-1, 28, 28)), 3, 1), y)
@@ -305,8 +306,7 @@ def load_mnist_invert(roll=True, batchsize=500, shape=(-1, 28, 28)):
         domain_data: dict with the separated data
 
     """
-    source = load_mnist() # Load the raw MNIST data
-    train_S, val_S, test_S = source
+    train_S, val_S, test_S = load_mnist() # Load the raw MNIST data
     
     X_train, y_train = train_S
     X_val, y_val = val_S
@@ -341,7 +341,7 @@ def load_mnist_invert(roll=True, batchsize=500, shape=(-1, 28, 28)):
                     }
 
     domain_data = make_domain_dataset([source_data, target_data])
-    
+
     return source_data, target_data, domain_data
 
 

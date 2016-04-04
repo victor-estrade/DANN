@@ -20,7 +20,6 @@ class Trainner(object):
         self.__dict__.update(funs)
 
 
-
 def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logger=None):
     """
     TODO : Explain the whole function
@@ -55,6 +54,11 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
         # Prepare the statistics
         start_time = time.time()
         stats = { key:[] for key in final_stats.keys()}
+
+        # Do some trainning preparations :
+        for data in train_data+test_data:
+            if 'prepare' in data:
+                data = data['prepare'](data)
 
         # Training : (forward and backward propagation)
         # done with the iterative functions

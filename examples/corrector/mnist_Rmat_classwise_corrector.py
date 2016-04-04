@@ -22,6 +22,32 @@ from nn.training import Trainner, training
 from utils import plot_bound
 
 
+
+def classwise_shuffle(X, y):
+    """
+    Shuffle X without changing the class positions
+
+    Params
+    ------
+        X: the data (numpy array)
+        y: the labels 
+    Return
+    ------
+        X_shuffled: Shuffled X without changing the class matching
+    """
+    idx = np.empty_like(y, dtype=int)
+    for label in np.unique(y):
+        arr = np.where(y==label)[0]
+        arr2 = np.random.permutation(arr)
+        idx[arr] = arr2
+    return X[idx]
+
+
+def epoch_shuffle(self):
+    self['X_train'] = classwise_shuffle(self['X_train'], self['labels'])
+    return self
+
+
 def parseArgs():
     """
     ArgumentParser.
@@ -36,7 +62,7 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=500, type=int, dest='num_epochs')
+        default=300, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
@@ -44,7 +70,7 @@ def parseArgs():
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=10, type=float, dest='label_rate')
     parser.add_argument(
-        '--label-mom', help="The learning rate momentum of the label part of the neural network ",
+        '--label-mom', help="The learning rate of the label part of the neural network ",
         default=0.9, type=float, dest='label_mom')
     parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
@@ -73,7 +99,7 @@ def main():
     # Set up the training :
     data_name = 'MNISTRMat'
     batchsize = 500
-    model = 'PairWiseCorrector'
+    model = 'ClassWiseCorrector'
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
@@ -82,11 +108,12 @@ def main():
 
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train': source_data['X_train'],
-    	'y_val': source_data['X_val'],
-    	'y_test': source_data['X_test'],
-        # 'batchsize':100,
-    	})
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
+        'labels': source_data['y_train']
+        })
+    corrector_data['prepare'] = epoch_shuffle
 
     # Prepare the logger :
     # f_log = log_fname(title)
@@ -118,16 +145,24 @@ def main():
                     )
     reshaper = lasagne.layers.ReshapeLayer(feature, (-1,) + shape[1:])
     output_layer = reshaper
-    
+    if hp_lambda != 0.0:
+        rgl = ReverseGradientLayer(reshaper, hp_lambda=hp_lambda)
+        domain_clf = Classifier(rgl, 2)
+
     # Compilation
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, 
                                  squared_error_sgd_mom(lr=label_rate, mom=label_mom, target_var=target_var), 
-    							 'corrector',)
+                                 'corrector',)
+    if hp_lambda != 0.0:
+        domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=domain_mom), 'domain')
     
     # Train the NN
-    stats = training([corrector_trainner,], [corrector_data,],
-                     # testers=[target_trainner,], test_data=[target_data],
+    if hp_lambda != 0.0:
+        stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
+                         num_epochs=num_epochs, logger=logger)
+    else:
+        stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
     
     # Plot learning accuracy curve
@@ -165,6 +200,14 @@ def main():
         ax.set_title('Corrected image')
     fig.savefig('fig/{}-sample.png'.format(title))
     plt.close(fig) # Clear plot window
+
+    # Plot the weights of the corrector
+    W = feature.W.get_value()
+    plt.imshow(W, interpolation='nearest', cmap=plt.cm.coolwarm)
+    plt.title(title)
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig('fig/{}-Weights.png'.format(title))
 
 
 if __name__ == '__main__':

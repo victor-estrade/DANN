@@ -36,19 +36,22 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=60, type=int, dest='num_epochs')
+        default=100, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
-        default=1, type=float, dest='label_rate')
+        default=2, type=float, dest='label_rate')
     parser.add_argument(
-        '--label-mom', help="The learning rate of the label part of the neural network ",
+        '--label-mom', help="The learning rate momentum of the label part of the neural network ",
         default=0.9, type=float, dest='label_mom')
     parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
         default=1, type=float, dest='domain_rate')
+    parser.add_argument(
+        '--domain-mom', help="The learning rate momentum of the domain part of the neural network ",
+        default=0.9, type=float, dest='domain_mom')
 
     args = parser.parse_args()
     return args
@@ -65,6 +68,7 @@ def main():
     label_rate = args.label_rate
     label_mom = args.label_mom
     domain_rate = args.domain_rate
+    domain_mom = args.domain_mom
 
     # Set up the training :
     data_name = 'MNISTDiag'
@@ -155,6 +159,14 @@ def main():
         ax.set_title('Corrected image')
     fig.savefig('fig/{}-sample.png'.format(title))
     plt.close(fig) # Clear plot window
+
+    # Plot the weights of the corrector
+    W = feature.W.get_value()
+    plt.imshow(W, interpolation='nearest', cmap=plt.cm.coolwarm)
+    plt.title(title)
+    plt.colorbar()
+    plt.tight_layout()
+    plt.savefig('fig/{}-Weights.png'.format(title))
 
 
 if __name__ == '__main__':

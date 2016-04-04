@@ -39,7 +39,7 @@ def parseArgs():
         default=40, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0.7, type=float, dest='hp_lambda')
+        default=0., type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')
@@ -102,6 +102,12 @@ def main():
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
+    # feature = lasagne.layers.DenseLayer(
+    #                 input_layer,
+    #                 num_units=np.prod(shape[1:]),
+    #                 nonlinearity=lasagne.nonlinearities.tanh,
+    #                 # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+    #                 )
     output_layer = lasagne.layers.DenseLayer(
                     input_layer,
                     num_units=np.prod(shape[1:]),
@@ -159,7 +165,7 @@ def main():
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
 
 
 if __name__ == '__main__':
