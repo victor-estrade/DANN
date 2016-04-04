@@ -150,9 +150,9 @@ def main():
     
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train':source_data['X_train'],
-    	'y_val':source_data['X_val'],
-    	'y_test':source_data['X_test'],
+    	'y_train': source_data['X_train'],
+    	'y_val': source_data['X_val'],
+    	'y_test': source_data['X_test'],
     	})
 
     # Prepare the logger :
@@ -187,9 +187,7 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
     							 'corrector',)
-    # domain_trainner = Trainner(domain_clf.output_layer, squared_error_sgd_mom(lr=domain_rate, mom=0), 'domain')
-    # target_trainner = Trainner(label_clf.output_layer, squared_error_sgd_mom(lr=label_rate, mom=0), 'target')
-
+    
     # Train the NN
     stats = training([corrector_trainner,], [corrector_data,],
                      # testers=[target_trainner,], test_data=[target_data],
@@ -205,6 +203,32 @@ def main():
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
     fig.clf() # Clear plot window
+
+    # Plot some sample images:
+    fig = plt.figure()
+    n_sample = 4
+    rand = np.random.RandomState()
+    for n in range(n_sample):
+        i = rand.randint(source_data['X_test'].shape[0])
+        sample_src = source_data['X_test'][i]
+        sample_trg = target_data['X_test'][i]
+        sample_corrected = corrector_trainner.output(target_data['X_test'][i][np.newaxis])
+        sample_corrected = np.array(sample_corrected).reshape((28,28))
+        ax = fig.add_subplot(n_sample, 3, n*3+1)
+        ax.axis('off')
+        ax.imshow(sample_src, cmap='Greys_r')
+        ax.set_title('Source image')
+        ax = fig.add_subplot(n_sample, 3, n*3+2)
+        ax.axis('off')
+        ax.imshow(sample_trg, cmap='Greys_r')
+        ax.set_title('Target image')
+        ax = fig.add_subplot(n_sample, 3, n*3+3)
+        ax.axis('off')
+        ax.imshow(sample_corrected, cmap='Greys_r')
+        ax.set_title('Corrected image')
+    fig.savefig('fig/MNIST-Mirror-sample.png')
+    plt.close(fig) # Clear plot window
+
 
 
 if __name__ == '__main__':
