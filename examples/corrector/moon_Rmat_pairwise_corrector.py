@@ -39,7 +39,7 @@ def parseArgs():
         default=12, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
-        default=0.7, type=float, dest='hp_lambda')
+        default=0., type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')
@@ -71,7 +71,7 @@ def main():
     # Load Moon Dataset
     source_data, target_data, domain_data = load_moon()
     source_data, target_data, domain_data = random_mat_dataset(source_data)
-    
+
     corrector_data = dict(target_data)
     corrector_data.update({
     	'y_train':source_data['X_train'],
@@ -111,7 +111,7 @@ def main():
     stats = training([corrector_trainner,], [corrector_data,],
                      # testers=[target_trainner,], test_data=[target_data],
                      num_epochs=num_epochs, logger=logger)
-    
+
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
     ax.plot(stats['corrector valid loss'], label='source')
@@ -128,7 +128,7 @@ def main():
     import matplotlib.cm as cm
     cm_bright = ListedColormap(['#FF0000', '#0000FF'])
     color = cm.ScalarMappable(cmap=cm_bright)
-    
+
     fig, ax = plt.subplots()
     X = source_data['X_test']
     y = source_data['y_test']
@@ -137,13 +137,15 @@ def main():
     X = target_data['X_test']
     y = target_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
-    
+
     X = np.array(corrector_trainner.output(target_data['X_test'])).reshape((-1, 2))
     y = target_data['y_test']
+    ax.set_title(title)
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap=cm_bright)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
     fig.savefig('fig/'+title+'.png', bbox_inches='tight')
+
 
 if __name__ == '__main__':
     main()
