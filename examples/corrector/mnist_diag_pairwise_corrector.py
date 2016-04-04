@@ -12,9 +12,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.moon import load_moon
-from datasets.mnist import load_mnist_mirror
-from datasets.utils import random_mat_dataset
+from datasets.mnist import load_mnist_src
+from datasets.utils import diag_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier
@@ -37,13 +36,16 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=100, type=int, dest='num_epochs')
+        default=60, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')
+    parser.add_argument(
+        '--label-mom', help="The learning rate of the label part of the neural network ",
+        default=0.9, type=float, dest='label_mom')
     parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
         default=1, type=float, dest='domain_rate')
@@ -61,22 +63,25 @@ def main():
     num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
+    label_mom = args.label_mom
     domain_rate = args.domain_rate
 
     # Set up the training :
-    data_name = 'MNISTMirror'
+    data_name = 'MNISTDiag'
     batchsize = 500
-    model = 'PairWiseCorrector'
+    model = 'PairwiseCorrector'
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
-    source_data, target_data, domain_data = load_mnist_mirror()
+    source_data = load_mnist_src()
+    source_data, target_data, domain_data = diag_dataset(source_data, normalize=True)
     
     corrector_data = dict(target_data)
     corrector_data.update({
     	'y_train': source_data['X_train'],
     	'y_val': source_data['X_val'],
     	'y_test': source_data['X_test'],
+        # 'batchsize':100,
     	})
 
     # Prepare the logger :
@@ -99,18 +104,20 @@ def main():
                     input_layer,
                     num_units=np.prod(shape[1:]),
                     nonlinearity=None,
-                    # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+                    W=lasagne.init.Uniform(range=0.0000001, std=None, mean=0.0),
                     )
     reshaper = lasagne.layers.ReshapeLayer(feature, (-1,) + shape[1:])
     output_layer = reshaper
     
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
+    corrector_trainner = Trainner(output_layer, 
+                                 squared_error_sgd_mom(lr=label_rate, mom=label_mom, target_var=target_var), 
     							 'corrector',)
     
     # Train the NN
     stats = training([corrector_trainner,], [corrector_data,],
+                     # testers=[target_trainner,], test_data=[target_data],
                      num_epochs=num_epochs, logger=logger)
     
     # Plot learning accuracy curve
@@ -148,14 +155,6 @@ def main():
         ax.set_title('Corrected image')
     fig.savefig('fig/{}-sample.png'.format(title))
     plt.close(fig) # Clear plot window
-
-    # Plot the weights of the corrector
-    W = feature.W.get_value()
-    plt.imshow(W, interpolation='nearest', cmap=plt.cm.coolwarm)
-    plt.title(title)
-    plt.colorbar()
-    plt.tight_layout()
-    plt.savefig('fig/{}-Weights.png'.format(title))
 
 
 if __name__ == '__main__':
