@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import utils
-import moon
+import toys
 import mnist
 import svhn

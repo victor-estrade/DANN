@@ -12,7 +12,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.moon import load_moon
+from datasets.toys import load_moon
 from datasets.utils import random_mat_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
