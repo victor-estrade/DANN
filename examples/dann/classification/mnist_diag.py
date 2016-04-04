@@ -17,7 +17,7 @@ from datasets.utils import diag_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier
-from nn.compilers import compiler_sgd_mom
+from nn.compilers import crossentropy_sgd_mom
 from nn.training import Trainner, training
 
 from utils import plot_bound, save_confusion_matrix
@@ -69,7 +69,7 @@ def main():
     model = 'SimplestDANN'
     title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
 
-    # Load Moon Dataset
+    # Load MNIST Dataset
     source_data = load_mnist_src()
     source_data, target_data, domain_data = diag_dataset(source_data)
     datas = [source_data, domain_data, target_data]
@@ -99,9 +99,9 @@ def main():
     
     # Compilation
     logger.info('Compiling functions')
-    label_trainner = Trainner(label_clf.output_layer, compiler_sgd_mom(lr=label_rate, mom=0), 'source')
-    domain_trainner = Trainner(domain_clf.output_layer, compiler_sgd_mom(lr=domain_rate, mom=0), 'domain')
-    target_trainner = Trainner(label_clf.output_layer, compiler_sgd_mom(lr=label_rate, mom=0), 'target')
+    label_trainner = Trainner(label_clf.output_layer, crossentropy_sgd_mom(lr=label_rate, mom=0), 'source')
+    domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=0), 'domain')
+    target_trainner = Trainner(label_clf.output_layer, crossentropy_sgd_mom(lr=label_rate, mom=0), 'target')
 
     # Train the NN
     stats = training([label_trainner, domain_trainner], [source_data, domain_data],
@@ -139,7 +139,7 @@ def main():
         ax.imshow(sample_trg, cmap='Greys_r')
         label = label_trainner.predict(sample_trg[np.newaxis])[0]
         ax.set_title('Target image (pred={})'.format(label))
-    fig.savefig('fig/MNIST-A-sample.png')
+    fig.savefig('fig/{}-sample.png'.format(title))
     plt.close(fig) # Clear plot window
 
     # Plot confusion matrices :

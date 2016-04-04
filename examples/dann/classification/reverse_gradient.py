@@ -16,7 +16,7 @@ from datasets.moon import load_moon
 from logs import log_fname, new_logger
 from nn.dann import AbstractDANN
 from nn.rgl import ReverseGradientLayer
-from nn.compilers import compiler_sgd_mom
+from nn.compilers import crossentropy_sgd_mom
 from utils import iterate_minibatches, plot_bound
 
 
@@ -132,7 +132,7 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1):
     dann = BadNN(3, 2, input_layer, hp_lambda=hp_lambda)
 
     logger.info('Compiling functions')
-    dann.compile_label(compiler_sgd_mom(lr=label_rate, mom=0))
+    dann.compile_label(crossentropy_sgd_mom(lr=label_rate, mom=0))
     
     # Train the NN
     stats = dann.training(source_data, num_epochs=num_epochs)

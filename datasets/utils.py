@@ -4,7 +4,9 @@ from __future__ import division, print_function
 
 import numpy as np
 
+from sklearn.preprocessing import Normalizer
 np.random.seed(12345)
+
 
 def shuffle_array(*args):
     """
@@ -98,7 +100,8 @@ def diag_dominant_matrix(size):
         raise ValueError('The matrix is not invertible. Internet lied to me ! {}'.format(str(eigens)))
     return matrix
 
-def diag_dataset(source_data):
+
+def diag_dataset(source_data, normalize=False):
     X_train = source_data['X_train']
     y_train = source_data['y_train']
     X_val = source_data['X_val']
@@ -113,10 +116,16 @@ def diag_dataset(source_data):
     y_t_test = y_test
 
     A = diag_dominant_matrix(size)
-    X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
-    X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
-    X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
-    
+    if normalize:
+        normalizer = Normalizer()
+        X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
+        X_t_val = normalizer.fit_transform(np.dot(X_val.reshape(-1, size), A)).reshape(X_val.shape)
+        X_t_test = normalizer.fit_transform(np.dot(X_test.reshape(-1, size), A)).reshape(X_test.shape)
+    else:
+        X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
+        X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
+        X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
+        
     target_data = {
                 'X_train': X_t_train,
                 'y_train': y_t_train,
@@ -127,22 +136,11 @@ def diag_dataset(source_data):
                 'batchsize':batchsize,
                 }
 
-    X_train, y_train = domain_X_y([X_train, X_t_train])
-    X_val, y_val = domain_X_y([X_val, X_t_val])
-    X_test, y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
+    domain_data = make_domain_dataset([source_data, target_data])
     return source_data, target_data, domain_data
 
-def random_mat_dataset(source_data):
+
+def random_mat_dataset(source_data, normalize=False):
     X_train = source_data['X_train']
     y_train = source_data['y_train']
     X_val = source_data['X_val']
@@ -157,10 +155,16 @@ def random_mat_dataset(source_data):
     y_t_test = y_test
 
     A = np.random.random((size, size))
-    X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
-    X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
-    X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
-    
+    if normalize:
+        normalizer = Normalizer()
+        X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
+        X_t_val = normalizer.fit_transform(np.dot(X_val.reshape(-1, size), A)).reshape(X_val.shape)
+        X_t_test = normalizer.fit_transform(np.dot(X_test.reshape(-1, size), A)).reshape(X_test.shape)
+    else:
+        X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
+        X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
+        X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
+
     target_data = {
                 'X_train': X_t_train,
                 'y_train': y_t_train,
@@ -171,19 +175,7 @@ def random_mat_dataset(source_data):
                 'batchsize':batchsize,
                 }
 
-    X_train, y_train = domain_X_y([X_train, X_t_train])
-    X_val, y_val = domain_X_y([X_val, X_t_val])
-    X_test, y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
-                    'X_train': X_train,
-                    'y_train': y_train, 
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize':batchsize*2,
-                    }
-
+    domain_data = make_domain_dataset([source_data, target_data])
     return source_data, target_data, domain_data
 
 

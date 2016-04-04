@@ -16,7 +16,7 @@ from datasets.moon import load_moon
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier
-from nn.compilers import compiler_sgd_mom
+from nn.compilers import crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound
 
@@ -88,7 +88,7 @@ def main():
     
     # Compilation
     logger.info('Compiling functions')
-    label_trainner = Trainner(label_clf.output_layer, compiler_sgd_mom(lr=label_rate, mom=0), 'source')
+    label_trainner = Trainner(label_clf.output_layer, crossentropy_sgd_mom(lr=label_rate, mom=0), 'source')
     
     # Train the NN
     stats = training([label_trainner,], [source_data,],
