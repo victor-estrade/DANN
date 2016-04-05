@@ -80,7 +80,7 @@ def crossentropy_sgd_mom(lr=1, mom=.9) :
     return lambda output_layer: get_fun(output_layer, lr=lr, mom=mom)
 
 
-def squared_error_sgd_mom(lr=1, mom=.9, target_var=T.ivector('target')) : 
+def squared_error_sgd_mom(lr=1, mom=.9, target_var=T.matrix('target')) : 
     """
     Stochastic Gradient Descent compiler with optionnal momentum.
 
@@ -105,7 +105,7 @@ def squared_error_sgd_mom(lr=1, mom=.9, target_var=T.ivector('target')) :
     >>> compiler = squared_error_sgd_mom(lr=0.01, mom=0.1)
     
     """    
-    def get_fun(output_layer, lr=1, mom=.9, target_var=T.ivector('target')):
+    def get_fun(output_layer, lr=1, mom=.9, target_var=T.matrix('target')):
 
         input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
         # Create a loss expression for training, i.e., a scalar objective we want

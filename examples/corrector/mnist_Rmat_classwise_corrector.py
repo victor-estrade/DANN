@@ -22,7 +22,6 @@ from nn.training import Trainner, training
 from utils import plot_bound
 
 
-
 def classwise_shuffle(X, y):
     """
     Shuffle X without changing the class positions
@@ -62,7 +61,7 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=300, type=int, dest='num_epochs')
+        default=500, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
