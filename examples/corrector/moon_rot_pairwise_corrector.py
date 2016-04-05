@@ -36,7 +36,7 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=40, type=int, dest='num_epochs')
+        default=7, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
@@ -112,7 +112,7 @@ def main():
                     input_layer,
                     num_units=np.prod(shape[1:]),
                     nonlinearity=None,
-                    # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
+                    # W=lasagne.init.Uniform(range=0.001, std=None, mean=0.0),
                     )
     if hp_lambda != 0.0:
         rgl = ReverseGradientLayer(output_layer, hp_lambda=hp_lambda)

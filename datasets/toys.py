@@ -44,8 +44,8 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
     y = np.array(y, dtype=np.int32)
     X_r = rotate_data(X, angle=angle)
 
-    X_S, y_S = shuffle_array(X, y)
-    X_T, y_T = shuffle_array(X_r, y)
+    X_S, y_S, X_T, y_T = shuffle_array(X, y, X_r, y)
+    # X_T, y_T = shuffle_array(X_r, y)
 
     X_train, X_val, X_test = X_S[0:300], X_S[300:400], X_S[400:]
     y_train, y_val, y_test = y_S[0:300], y_S[300:400], y_S[400:]

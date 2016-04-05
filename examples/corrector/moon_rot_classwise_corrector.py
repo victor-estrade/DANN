@@ -179,7 +179,7 @@ def main():
     X = target_data['X_test']
     y = target_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
-    
+
     X = np.array(corrector_trainner.output(target_data['X_test'])).reshape((-1, 2))
     y = target_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap=cm_bright)
