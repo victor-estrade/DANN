@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import numpy as np
-from utils import shuffle_array, domain_X_y
+from utils import shuffle_array, make_domain_dataset
 from sklearn.datasets import make_moons
 
 # ============================================================================
@@ -73,20 +73,56 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
                     'batchsize':batchsize,
                     }
 
-    X_train, y_train = domain_X_y([X_train, X_t_train])
-    X_val, y_val = domain_X_y([X_val, X_t_val])
-    X_test, y_test = domain_X_y([X_test, X_t_test])
-    domain_data = {
+    domain_data = make_domain_dataset([source_data, target_data])
+    return source_data, target_data, domain_data
+
+
+def load_clouds(n_sample=500 ,n_classes=2, batchsize=50):
+    """
+    Dataset made from normal distributions localised at root of unity solution.
+
+    Params
+    ------
+        n_sample: (default=500) the number of trainning sample in each class
+            (validation and test have n_sample/2 samples)
+        n_classes: (default=2) the number of classes
+        batchsize: the batchsize
+    
+    Return
+    ------
+        source_data: dict with the separated data
+    """
+    pos = [np.exp(2j*np.pi*i/n_classes) for i in range(n_classes)]
+
+    X_train = np.empty((n_sample*n_classes, 2))
+    X_train[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
+    X_train[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
+    y_train = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+
+    X_val = np.empty((n_sample*n_classes, 2))
+    X_val[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
+    X_val[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
+    y_val = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+
+    X_test = np.empty((n_sample*n_classes, 2))
+    X_test[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
+    X_test[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
+    y_test = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+
+    X_train, y_train = shuffle_array(X_train, y_train)
+    X_val, y_val = shuffle_array(X_val, y_val)
+    X_test, y_test = shuffle_array(X_test, y_test)
+
+    source_data = {
                     'X_train': X_train,
-                    'y_train': y_train, 
+                    'y_train': y_train,
                     'X_val': X_val,
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize*2,
+                    'batchsize':batchsize,
                     }
-
-    return source_data, target_data, domain_data
+    return source_data
 
 if __name__ == '__main__':
     load_moon()

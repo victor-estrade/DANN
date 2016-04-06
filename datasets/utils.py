@@ -172,7 +172,7 @@ def random_mat_dataset(source_data, normalize=False):
                 'y_val': y_t_val,
                 'X_test': X_t_test,
                 'y_test': y_t_test,
-                'batchsize':batchsize,
+                'batchsize': batchsize,
                 }
 
     domain_data = make_domain_dataset([source_data, target_data])
