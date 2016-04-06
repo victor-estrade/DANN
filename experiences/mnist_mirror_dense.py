@@ -70,7 +70,7 @@ def main():
     n_features = 28*28
     arch = [n_features//2, n_features//4, n_features//8]
     model = 'DenseDANN[{}]'.format('-'.join([str(v) for v in arch]))
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
     source_data, target_data, domain_data = load_mnist_mirror()
@@ -81,7 +81,7 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor3('inputs')

@@ -12,12 +12,11 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.moon import load_moon
 from datasets.mnist import load_mnist_mirror
 from datasets.utils import random_mat_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
-from nn.block import Dense, Classifier
+from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound, iterate_minibatches
@@ -100,7 +99,7 @@ def main():
     data_name = 'MNISTMirror'
     batchsize = 500
     model = 'ClassWiseCorrector'
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
     source_data, target_data, domain_data = load_mnist_mirror()
@@ -128,14 +127,14 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor3('inputs')
     target_var = T.tensor3('targets')
     shape = (batchsize, 28, 28)
     input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
-    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
+    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.tensor3('src'))
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================

@@ -115,12 +115,12 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1):
 
     model = 'BadNN'
 
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
     # f_log = log_fname(title)
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')

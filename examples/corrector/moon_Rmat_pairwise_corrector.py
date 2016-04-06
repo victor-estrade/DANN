@@ -16,7 +16,7 @@ from datasets.toys import load_moon
 from datasets.utils import random_mat_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
-from nn.block import Dense, Classifier
+from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound
@@ -36,7 +36,7 @@ def parseArgs():
                     "power of the Reverse Gradient Layer")
     parser.add_argument(
         '--epoch', help='Number of epoch in the training session',
-        default=12, type=int, dest='num_epochs')
+        default=40, type=int, dest='num_epochs')
     parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
@@ -44,8 +44,14 @@ def parseArgs():
         '--label-rate', help="The learning rate of the label part of the neural network ",
         default=1, type=float, dest='label_rate')
     parser.add_argument(
+        '--label-mom', help="The learning rate momentum of the label part of the neural network ",
+        default=0.9, type=float, dest='label_mom')
+    parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
         default=1, type=float, dest='domain_rate')
+    parser.add_argument(
+        '--domain-mom', help="The learning rate momentum of the domain part of the neural network ",
+        default=0.9, type=float, dest='domain_mom')
 
     args = parser.parse_args()
     return args
@@ -60,13 +66,15 @@ def main():
     num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
+    label_mom = args.label_mom
     domain_rate = args.domain_rate
+    domain_mom = args.domain_mom
 
     # Set up the training :
     data_name = 'MoonRMat'
     batchsize = 32
     model = 'PaiwiseCorrector'
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load Moon Dataset
     source_data, target_data, domain_data = load_moon()
@@ -93,7 +101,7 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')

@@ -66,7 +66,7 @@ def main():
     data_name = 'MnistMirror'
     batchsize = 500
     model = 'CNNDANN'
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load MNIST Dataset
     source_data, target_data, domain_data = load_mnist_mirror(shape=(-1, 1, 28, 28))
@@ -77,7 +77,7 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor4('inputs')

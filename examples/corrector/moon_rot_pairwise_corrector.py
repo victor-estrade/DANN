@@ -38,6 +38,9 @@ def parseArgs():
         '--epoch', help='Number of epoch in the training session',
         default=7, type=int, dest='num_epochs')
     parser.add_argument(
+        '--angle', help='Value of the lambda_D param of the Reversal Gradient Layer',
+        default=-30., type=float, dest='angle')
+    parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
@@ -63,6 +66,7 @@ def main():
     """
     # Parse the aruments
     args = parseArgs()
+    angle = args.angle
     num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
@@ -74,10 +78,10 @@ def main():
     data_name = 'MoonRotated'
     batchsize = 32
     model = 'PaiwiseCorrector'
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load Moon Dataset
-    source_data, target_data, domain_data = load_moon()
+    source_data, target_data, domain_data = load_moon(angle=angle)
     domain_data = {
                 'X_train':[source_data['X_train'], target_data['X_train']],
                 'X_val':[source_data['X_val'], target_data['X_val']],
@@ -100,7 +104,7 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')

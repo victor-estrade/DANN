@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from datasets.toys import load_moon
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
-from nn.block import Dense, Classifier
+from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound, iterate_minibatches
@@ -62,6 +62,9 @@ def parseArgs():
         '--epoch', help='Number of epoch in the training session',
         default=40, type=int, dest='num_epochs')
     parser.add_argument(
+        '--angle', help='Value of the lambda_D param of the Reversal Gradient Layer',
+        default=-30., type=float, dest='angle')
+    parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
@@ -72,7 +75,7 @@ def parseArgs():
         default=0.9, type=float, dest='label_mom')
     parser.add_argument(
         '--domain-rate', help="The learning rate of the domain part of the neural network ",
-        default=0.01, type=float, dest='domain_rate')
+        default=1, type=float, dest='domain_rate')
     parser.add_argument(
         '--domain-mom', help="The learning rate momentum of the domain part of the neural network ",
         default=0., type=float, dest='domain_mom')
@@ -87,6 +90,7 @@ def main():
     """
     # Parse the aruments
     args = parseArgs()
+    angle = args.angle
     num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
@@ -98,10 +102,10 @@ def main():
     data_name = 'MoonRotated'
     batchsize = 32
     model = 'ClassWiseCorrector'
-    title = '{}-{}-lambda-{:.4f}'.format(data_name, model, hp_lambda)
+    title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     # Load Moon Dataset
-    source_data, target_data, domain_data = load_moon(angle=-20)
+    source_data, target_data, domain_data = load_moon(angle=angle)
     domain_data = {
                 'X_train':[source_data['X_train'], target_data['X_train']],
                 'X_val':[source_data['X_val'], target_data['X_val']],
@@ -126,7 +130,7 @@ def main():
     logger = new_logger()
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
-    logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
+    logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
