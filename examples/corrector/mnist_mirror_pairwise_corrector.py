@@ -71,13 +71,22 @@ def main():
 
     # Load MNIST Dataset
     source_data, target_data, domain_data = load_mnist_mirror()
-    
+    domain_data = {
+                'X_train':[source_data['X_train'], target_data['X_train']],
+                'X_val':[source_data['X_val'], target_data['X_val']],
+                'X_test':[source_data['X_test'], target_data['X_test']],
+                'y_train':None,
+                'y_val':None,
+                'y_test':None,
+                'batchsize':batchsize,
+                }    
+
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train': source_data['X_train'],
-    	'y_val': source_data['X_val'],
-    	'y_test': source_data['X_test'],
-    	})
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
+        })
 
     # Prepare the logger :
     # f_log = log_fname(title)
@@ -89,9 +98,9 @@ def main():
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor3('inputs')
     target_var = T.tensor3('targets')
-    shape = (None, 28, 28)
-    input_layer = lasagne.layers.InputLayer(shape=shape,
-                                        input_var=input_var)
+    shape = (batchsize, 28, 28)
+    input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
+    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
@@ -106,11 +115,21 @@ def main():
     
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
-    							 'corrector',)
+    corrector_trainner = Trainner(output_layer, 
+                                 squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
+                                 'corrector',)
+    if hp_lambda != 0.0:
+        domain_trainner = Trainner(None, 
+                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+                                              lr=domain_rate, mom=domain_mom),
+                                   'domain')
     
     # Train the NN
-    stats = training([corrector_trainner,], [corrector_data,],
+    if hp_lambda != 0.0:
+        stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
+                         num_epochs=num_epochs, logger=logger)
+    else:
+        stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
     
     # Plot learning accuracy curve

@@ -105,7 +105,16 @@ def main():
     # Load Moon Dataset
     source_data, target_data, domain_data = load_moon()
     source_data, target_data, domain_data = random_mat_dataset(source_data)
-    
+    domain_data = {
+                'X_train':[source_data['X_train'], target_data['X_train']],
+                'X_val':[source_data['X_val'], target_data['X_val']],
+                'X_test':[source_data['X_test'], target_data['X_test']],
+                'y_train':None,
+                'y_val':None,
+                'y_test':None,
+                'batchsize':batchsize,
+                }    
+
     corrector_data = dict(target_data)
     corrector_data.update({
     	'y_train':source_data['X_train'],
@@ -125,9 +134,9 @@ def main():
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.matrix('targets')
-    shape = (None, 2)
-    input_layer = lasagne.layers.InputLayer(shape=shape,
-                                        input_var=input_var)
+    shape = (batchsize, 2)
+    input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
+    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
@@ -137,17 +146,17 @@ def main():
                     nonlinearity=None,
                     # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
                     )
-    if hp_lambda != 0.0:
-        rgl = ReverseGradientLayer(output_layer, hp_lambda=hp_lambda)
-        domain_clf = Classifier(rgl, 2)
     
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
+    corrector_trainner = Trainner(output_layer, 
+                                 squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
     							 'corrector',)
     if hp_lambda != 0.0:
-        domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=domain_mom), 'domain')
-
+        domain_trainner = Trainner(None, 
+                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+                                              lr=domain_rate, mom=domain_mom),
+                                   'domain')
 
     # Train the NN
     if hp_lambda != 0.0:

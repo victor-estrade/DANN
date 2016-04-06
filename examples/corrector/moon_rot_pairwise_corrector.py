@@ -98,7 +98,6 @@ def main():
     # Prepare the logger :
     # f_log = log_fname(title)
     logger = new_logger()
-    logger.propagate = False
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
     logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
@@ -121,7 +120,8 @@ def main():
 
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
+    corrector_trainner = Trainner(output_layer, 
+                                 squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
                                  'corrector',)
     if hp_lambda != 0.0:
         domain_trainner = Trainner(None, 

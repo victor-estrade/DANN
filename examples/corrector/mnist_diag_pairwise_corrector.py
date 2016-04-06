@@ -79,14 +79,23 @@ def main():
     # Load MNIST Dataset
     source_data = load_mnist_src()
     source_data, target_data, domain_data = diag_dataset(source_data, normalize=True)
-    
+    domain_data = {
+                'X_train':[source_data['X_train'], target_data['X_train']],
+                'X_val':[source_data['X_val'], target_data['X_val']],
+                'X_test':[source_data['X_test'], target_data['X_test']],
+                'y_train':None,
+                'y_val':None,
+                'y_test':None,
+                'batchsize':batchsize,
+                }    
+
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train': source_data['X_train'],
-    	'y_val': source_data['X_val'],
-    	'y_test': source_data['X_test'],
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
         # 'batchsize':100,
-    	})
+        })
 
     # Prepare the logger :
     # f_log = log_fname(title)
@@ -99,8 +108,8 @@ def main():
     input_var = T.tensor3('inputs')
     target_var = T.tensor3('targets')
     shape = (None, 28, 28)
-    input_layer = lasagne.layers.InputLayer(shape=shape,
-                                        input_var=input_var)
+    input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
+    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
@@ -108,7 +117,7 @@ def main():
                     input_layer,
                     num_units=np.prod(shape[1:]),
                     nonlinearity=None,
-                    W=lasagne.init.Uniform(range=0.0000001, std=None, mean=0.0),
+                    # W=lasagne.init.Uniform(range=0.0000001, std=None, mean=0.0),
                     )
     reshaper = lasagne.layers.ReshapeLayer(feature, (-1,) + shape[1:])
     output_layer = reshaper
@@ -117,13 +126,21 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, 
                                  squared_error_sgd_mom(lr=label_rate, mom=label_mom, target_var=target_var), 
-    							 'corrector',)
+                                 'corrector',)
+    if hp_lambda != 0.0:
+        domain_trainner = Trainner(None, 
+                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+                                              lr=domain_rate, mom=domain_mom),
+                                   'domain')
     
     # Train the NN
-    stats = training([corrector_trainner,], [corrector_data,],
-                     # testers=[target_trainner,], test_data=[target_data],
+    if hp_lambda != 0.0:
+        stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
+                         num_epochs=num_epochs, logger=logger)
+    else:
+        stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
-    
+
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
     ax.plot(stats['corrector valid loss'], label='source')
