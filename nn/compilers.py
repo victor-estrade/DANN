@@ -7,7 +7,6 @@ import lasagne
 
 import theano.tensor as T
 
-
 def crossentropy_sgd_mom(lr=1, mom=.9) : 
     """
     Stochastic Gradient Descent compiler with optionnal momentum.
@@ -150,4 +149,3 @@ def squared_error_sgd_mom(lr=1, mom=.9, target_var=T.matrix('target')) :
                }
     
     return lambda output_layer: get_fun(output_layer, lr=lr, mom=mom, target_var=target_var)
-

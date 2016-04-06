@@ -136,7 +136,10 @@ def main():
                     )
     if hp_lambda != 0.0:
         rgl = ReverseGradientLayer(output_layer, hp_lambda=hp_lambda)
-        domain_clf = Classifier(rgl, 2)
+        domain_clf_target = Classifier(rgl, 2)
+        rgl = ReverseGradientLayer(input_layer, hp_lambda=hp_lambda)
+        domain_clf_source = Classifier(rgl, 2)
+
     
     # Compilation
     logger.info('Compiling functions')

@@ -71,6 +71,7 @@ def new_logger(fname=None, name=None):
         f_log.setFormatter(formatter)
         # add f_log to logger
         logger.addHandler(f_log)
+    logger.propagate = False
 
     return logger
 

@@ -115,17 +115,38 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     ------
         (input_slice, target_slice) as a generator
     """
-    # Handle multiple inputs :
-    if isinstance(inputs, tuple):
-        size = len(inputs[0])
+    data = tuple()
+    # Handle multiple or None inputs :
+    if inputs is None:
+        input_size = None
+    elif isinstance(inputs, tuple) or isinstance(inputs, list):
+        input_size = len(inputs[0])
+        size = input_size
         for inpt in inputs:
-            assert size == len(inpt), 'Each input should have the same number of examples'
-        data = inputs + (targets,)
+            assert input_size == len(inpt), 'Each input should have the same number of examples'
+        data += tuple(inputs)
     else:
-        size = len(inputs)
-        data = (inputs, targets)
+        input_size = len(inputs)
+        size = input_size
+        data += (inputs,)
 
-    assert size == len(targets), 'Each input examples should have a label'
+    # Handle multipleor None targets :
+    if targets is None:
+        target_size = None
+    elif isinstance(targets, tuple) or isinstance(targets, list):
+        target_size = len(targets[0])
+        size = target_size
+        for target in targets:
+            assert target_size == len(target), 'Each target should have the same number of examples'
+        data += tuple(targets)
+    else:
+        target_size = len(targets)
+        size = target_size
+        data += (targets,)
+
+    if target_size is not None and input_size is not None:
+        assert target_size == input_size, 'inputs and targets should have the same number of examples'
+
 
     if shuffle:
         indices = np.arange(size)

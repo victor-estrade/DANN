@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 from datasets.toys import load_moon
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
-from nn.block import Dense, Classifier
+from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound
@@ -78,17 +78,27 @@ def main():
 
     # Load Moon Dataset
     source_data, target_data, domain_data = load_moon()
+    domain_data = {
+                'X_train':[source_data['X_train'], target_data['X_train']],
+                'X_val':[source_data['X_val'], target_data['X_val']],
+                'X_test':[source_data['X_test'], target_data['X_test']],
+                'y_train':None,
+                'y_val':None,
+                'y_test':None,
+                'batchsize':batchsize,
+                }
 
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train':source_data['X_train'],
-    	'y_val':source_data['X_val'],
-    	'y_test':source_data['X_test'],
-    	})
+        'y_train':source_data['X_train'],
+        'y_val':source_data['X_val'],
+        'y_test':source_data['X_test'],
+        })
 
     # Prepare the logger :
     # f_log = log_fname(title)
     logger = new_logger()
+    logger.propagate = False
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
     logger.info('hp_lambda = {:.4f}'.format(hp_lambda))
@@ -96,34 +106,28 @@ def main():
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.matrix('targets')
-    shape = (None, 2)
-    input_layer = lasagne.layers.InputLayer(shape=shape,
-                                        input_var=input_var)
+    shape = (batchsize, 2)
+    input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
+    src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
     #=========================================================================
     # Build the neural network architecture
     #=========================================================================
-    # feature = lasagne.layers.DenseLayer(
-    #                 input_layer,
-    #                 num_units=np.prod(shape[1:]),
-    #                 nonlinearity=lasagne.nonlinearities.tanh,
-    #                 # W=lasagne.init.Uniform(range=0.01, std=None, mean=0.0),
-    #                 )
     output_layer = lasagne.layers.DenseLayer(
                     input_layer,
                     num_units=np.prod(shape[1:]),
                     nonlinearity=None,
                     # W=lasagne.init.Uniform(range=0.001, std=None, mean=0.0),
                     )
-    if hp_lambda != 0.0:
-        rgl = ReverseGradientLayer(output_layer, hp_lambda=hp_lambda)
-        domain_clf = Classifier(rgl, 2)
 
     # Compilation
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
-    							 'corrector',)
+                                 'corrector',)
     if hp_lambda != 0.0:
-        domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=domain_mom), 'domain')
+        domain_trainner = Trainner(None, 
+                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+                                              lr=domain_rate, mom=domain_mom),
+                                   'domain')
 
     # Train the NN
     if hp_lambda != 0.0:
