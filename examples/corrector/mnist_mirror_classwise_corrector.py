@@ -63,6 +63,9 @@ def parseArgs():
         '--epoch', help='Number of epoch in the training session',
         default=100, type=int, dest='num_epochs')
     parser.add_argument(
+        '--batchsize', help='The mini-batch size',
+        default=500, type=int, dest='batchsize')
+    parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
@@ -86,23 +89,28 @@ def main():
     """
     The main function.
     """
-    # Parse the aruments
+    #=========================================================================
+    # Parse the arguments. Handle the parameters
+    #=========================================================================
     args = parseArgs()
     num_epochs = args.num_epochs
+    batchsize = args.batchsize
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
     label_mom = args.label_mom
     domain_rate = args.domain_rate
     domain_mom = args.domain_mom
 
-    # Set up the training :
+    # Set up the naming information :
     data_name = 'MNISTMirror'
-    batchsize = 500
     model = 'ClassWiseCorrector'
     title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
+    #=========================================================================
+    # Load, Generate the datasets
+    #=========================================================================
     # Load MNIST Dataset
-    source_data, target_data, domain_data = load_mnist_mirror()
+    source_data, target_data, domain_data = load_mnist_mirror(batchsize=batchsize)
     domain_data = {
                 'X_train':[source_data['X_train'], target_data['X_train']],
                 'X_val':[source_data['X_val'], target_data['X_val']],
@@ -110,7 +118,7 @@ def main():
                 'y_train':None,
                 'y_val':None,
                 'y_test':None,
-                'batchsize':batchsize,
+                'batchsize': batchsize,
                 }    
 
     corrector_data = dict(target_data)
@@ -119,25 +127,32 @@ def main():
         'y_val': source_data['X_val'],
         'y_test': source_data['X_test'],
         'labels': source_data['y_train']
+        'batchsize': batchsize,
         })
     corrector_data['prepare'] = epoch_shuffle
 
-    # Prepare the logger :
+    #=========================================================================
+    # Prepare the logger
+    #=========================================================================
     # f_log = log_fname(title)
     logger = new_logger()
+    # Print general information
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
+    logger.info('Batchsize: {}'.format(batchsize))
     logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
+    #=========================================================================
+    # Build the neural network architecture
+    #=========================================================================
     # Prepare Theano variables for inputs and targets
     input_var = T.tensor3('inputs')
     target_var = T.tensor3('targets')
     shape = (batchsize, 28, 28)
+
+    # Build the layers
     input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
     src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.tensor3('src'))
-    #=========================================================================
-    # Build the neural network architecture
-    #=========================================================================
     feature = lasagne.layers.DenseLayer(
                     input_layer,
                     num_units=np.prod(shape[1:]),
@@ -158,7 +173,9 @@ def main():
                                               lr=domain_rate, mom=domain_mom),
                                    'domain')
     
-    # Train the NN
+    #=========================================================================
+    # Train the Neural Network
+    #=========================================================================
     if hp_lambda != 0.0:
         stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
                          num_epochs=num_epochs, logger=logger)
@@ -166,6 +183,9 @@ def main():
         stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
 
+    #=========================================================================
+    # Print, Plot, Save the final results
+    #=========================================================================
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
     ax.plot(stats['corrector valid loss'], label='source')

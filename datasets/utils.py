@@ -133,7 +133,7 @@ def diag_dataset(source_data, normalize=False):
                 'y_val': y_t_val,
                 'X_test': X_t_test,
                 'y_test': y_t_test,
-                'batchsize':batchsize,
+                'batchsize': batchsize,
                 }
 
     domain_data = make_domain_dataset([source_data, target_data])
@@ -177,6 +177,17 @@ def random_mat_dataset(source_data, normalize=False):
 
     domain_data = make_domain_dataset([source_data, target_data])
     return source_data, target_data, domain_data
+
+
+def rotate_data(X, angle=35.):
+    """Apply a rotation on a 2D dataset.
+    """
+    theta = (angle/180.) * np.pi
+    rotMatrix = np.array([[np.cos(theta), -np.sin(theta)], 
+                             [np.sin(theta),  np.cos(theta)]])
+    X_r = np.empty_like(X)
+    X_r[:] = X[:].dot(rotMatrix)
+    return X_r
 
 
 if __name__ == '__main__':

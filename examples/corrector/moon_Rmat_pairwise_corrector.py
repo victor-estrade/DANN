@@ -38,6 +38,9 @@ def parseArgs():
         '--epoch', help='Number of epoch in the training session',
         default=40, type=int, dest='num_epochs')
     parser.add_argument(
+        '--batchsize', help='The mini-batch size',
+        default=32, type=int, dest='batchsize')
+    parser.add_argument(
         '--lambda', help='Value of the lambda_D param of the Reversal Gradient Layer',
         default=0., type=float, dest='hp_lambda')
     parser.add_argument(
@@ -61,23 +64,28 @@ def main():
     """
     The main function.
     """
-    # Parse the aruments
+    #=========================================================================
+    # Parse the arguments. Handle the parameters
+    #=========================================================================
     args = parseArgs()
     num_epochs = args.num_epochs
+    batchsize = args.batchsize
     hp_lambda = args.hp_lambda
     label_rate = args.label_rate
     label_mom = args.label_mom
     domain_rate = args.domain_rate
     domain_mom = args.domain_mom
 
-    # Set up the training :
+    # Set up the naming information :
     data_name = 'MoonRMat'
-    batchsize = 32
     model = 'PaiwiseCorrector'
     title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
+    #=========================================================================
+    # Load, Generate the datasets
+    #=========================================================================
     # Load Moon Dataset
-    source_data, target_data, domain_data = load_moon()
+    source_data, target_data, domain_data = load_moon(batchsize=batchsize)
     source_data, target_data, domain_data = random_mat_dataset(source_data)
     domain_data = {
                 'X_train':[source_data['X_train'], target_data['X_train']],
@@ -86,7 +94,7 @@ def main():
                 'y_train':None,
                 'y_val':None,
                 'y_test':None,
-                'batchsize':batchsize,
+                'batchsize': batchsize,
                 }    
 
     corrector_data = dict(target_data)
@@ -94,24 +102,31 @@ def main():
     	'y_train':source_data['X_train'],
     	'y_val':source_data['X_val'],
     	'y_test':source_data['X_test'],
+        'batchsize': batchsize,
     	})
 
-    # Prepare the logger :
+    #=========================================================================
+    # Prepare the logger
+    #=========================================================================
     # f_log = log_fname(title)
     logger = new_logger()
+    # Print general information
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
+    logger.info('Batchsize: {}'.format(batchsize))
     logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
+    #=========================================================================
+    # Build the neural network architecture
+    #=========================================================================
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.matrix('targets')
     shape = (batchsize, 2)
+
+    # Build the layers
     input_layer = lasagne.layers.InputLayer(shape=shape, input_var=input_var)
     src_layer = lasagne.layers.InputLayer(shape=shape, input_var=T.matrix('src'))
-    #=========================================================================
-    # Build the neural network architecture
-    #=========================================================================
     output_layer = lasagne.layers.DenseLayer(
                     input_layer,
                     num_units=np.prod(shape[1:]),
@@ -130,7 +145,9 @@ def main():
                                               lr=domain_rate, mom=domain_mom),
                                    'domain')
 
-    # Train the NN
+    #=========================================================================
+    # Train the Neural Network
+    #=========================================================================
     if hp_lambda != 0.0:
         stats = training([corrector_trainner, domain_trainner], [corrector_data, domain_data],
                          num_epochs=num_epochs, logger=logger)
@@ -138,6 +155,9 @@ def main():
         stats = training([corrector_trainner,], [corrector_data,],
                      num_epochs=num_epochs, logger=logger)
 
+    #=========================================================================
+    # Print, Plot, Save the final results
+    #=========================================================================
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
     ax.plot(stats['corrector valid loss'], label='source')
@@ -155,6 +175,7 @@ def main():
     cm_bright = ListedColormap(['#FF0000', '#0000FF'])
     color = cm.ScalarMappable(cmap=cm_bright)
 
+    # Plot the test data
     fig, ax = plt.subplots()
     X = source_data['X_test']
     y = source_data['y_test']

@@ -2,23 +2,12 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import numpy as np
-from utils import shuffle_array, make_domain_dataset
+from utils import shuffle_array, make_domain_dataset, rotate_data
 from sklearn.datasets import make_moons
 
 # ============================================================================
 #                   Moon & Moon rotated
 # ============================================================================
-
-
-def rotate_data(X, angle=35.):
-    """Apply a rotation on a 2D dataset.
-    """
-    theta = (angle/180.) * np.pi
-    rotMatrix = np.array([[np.cos(theta), -np.sin(theta)], 
-                             [np.sin(theta),  np.cos(theta)]])
-    X_r = np.empty_like(X)
-    X_r[:] = X[:].dot(rotMatrix)
-    return X_r
 
 
 def load_moon(noise=0.05, angle=35., batchsize=32):
@@ -77,7 +66,7 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
     return source_data, target_data, domain_data
 
 
-def load_clouds(n_sample=500 ,n_classes=2, batchsize=50):
+def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
     """
     Dataset made from normal distributions localised at root of unity solution.
 
@@ -120,9 +109,25 @@ def load_clouds(n_sample=500 ,n_classes=2, batchsize=50):
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
     return source_data
+
+
+def load_cloud_rotated(n_sample=50 ,n_classes=2, batchsize=5, angle=90):
+    source_data = load_clouds(n_sample=n_sample ,n_classes=n_classes, batchsize=batchsize)
+    target_data = {
+                    'X_train': rotate_data(source_data['X_train'], angle=angle),
+                    'y_train': source_data['y_train'],
+                    'X_val': rotate_data(source_data['X_val'], angle=angle),
+                    'y_val': source_data['y_val'],
+                    'X_test': rotate_data(source_data['X_test'], angle=angle),
+                    'y_test': source_data['y_test'],
+                    'batchsize': source_data['batchsize'],
+                    }
+
+    domain_data = make_domain_dataset([source_data, target_data])
+    return source_data, target_data, domain_data
 
 if __name__ == '__main__':
     load_moon()

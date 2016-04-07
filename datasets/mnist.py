@@ -129,7 +129,7 @@ def load_mnist_src(batchsize=500, shape=(-1, 28, 28)):
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
     return source_data
 
@@ -278,7 +278,7 @@ def load_mnist_M(roll=True, batchsize=500):
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
     target_data = load_mnistM()
     target_data['batchsize'] = batchsize
@@ -327,7 +327,7 @@ def load_mnist_invert(roll=True, batchsize=500, shape=(-1, 28, 28)):
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
 
     target_data = {
@@ -337,7 +337,7 @@ def load_mnist_invert(roll=True, batchsize=500, shape=(-1, 28, 28)):
                     'y_val': y_t_val,
                     'X_test': X_t_test,
                     'y_test': y_t_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
 
     domain_data = make_domain_dataset([source_data, target_data])
@@ -387,7 +387,7 @@ def load_mnist_mirror(roll=True, batchsize=500, shape=(-1, 28, 28)):
                     'y_val': y_val,
                     'X_test': X_test.reshape(shape),
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
 
     target_data = {
@@ -397,7 +397,7 @@ def load_mnist_mirror(roll=True, batchsize=500, shape=(-1, 28, 28)):
                     'y_val': y_t_val,
                     'X_test': X_t_test.reshape(shape),
                     'y_test': y_t_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
 
     domain_data = make_domain_dataset([source_data, target_data])

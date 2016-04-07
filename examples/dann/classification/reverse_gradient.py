@@ -105,38 +105,53 @@ def main(hp_lambda=0.0, num_epochs=50, angle=-35, label_rate=1):
     """
     The main function.
     """
+    #=========================================================================
+    # Load, Generate the datasets
+    #=========================================================================
     # Moon Dataset
     data_name = 'MoonRotated'
     batchsize = 32
     source_data, target_data, domain_data = load_moon(angle=angle)
-
-    # Set up the training :
     datas = [source_data, domain_data, target_data]
 
+    # Set up the naming information :
     model = 'BadNN'
-
     title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
+
+    #=========================================================================
+    # Prepare the logger
+    #=========================================================================
     # f_log = log_fname(title)
     logger = new_logger()
+    # Print general information
     logger.info('Model: {}'.format(model))
     logger.info('Data: {}'.format(data_name))
     logger.info('hp_lambda = {:.4e}'.format(hp_lambda))
 
+    #=========================================================================
+    # Build the neural network architecture
+    #=========================================================================
     # Prepare Theano variables for inputs and targets
     input_var = T.matrix('inputs')
     target_var = T.ivector('targets')
     shape = (None, 2)
+
+    # Build the layers
     input_layer = lasagne.layers.InputLayer(shape=shape,
                                         input_var=input_var)
-    # Build the neural network architecture
     dann = BadNN(3, 2, input_layer, hp_lambda=hp_lambda)
 
     logger.info('Compiling functions')
     dann.compile_label(crossentropy_sgd_mom(lr=label_rate, mom=0))
     
-    # Train the NN
+    #=========================================================================
+    # Train the Neural Network
+    #=========================================================================
     stats = dann.training(source_data, num_epochs=num_epochs)
 
+    #=========================================================================
+    # Print, Plot, Save the final results
+    #=========================================================================
     # Plot learning accuracy curve
     fig, ax = plt.subplots()
     ax.plot(stats['source valid acc'], label='source')
