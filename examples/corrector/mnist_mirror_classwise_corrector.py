@@ -126,7 +126,7 @@ def main():
         'y_train': source_data['X_train'],
         'y_val': source_data['X_val'],
         'y_test': source_data['X_test'],
-        'labels': source_data['y_train']
+        'labels': source_data['y_train'],
         'batchsize': batchsize,
         })
     corrector_data['prepare'] = epoch_shuffle
