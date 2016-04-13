@@ -171,12 +171,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     
     Example:
     --------
-    >>> compiler = squared_error_sgd_mom(lr=0.01, mom=0.1)
-    >>> # Or :
-    >>> domain_trainner = Trainner(None, # This argument is ignored anyway
-                                   adversarial([src_layer, trg_layer], hp_lambda=hp_lambda,
-                                              lr=domain_rate, mom=domain_mom),
-                                   'domain')
+    TODO
     """    
 
     concat = lasagne.layers.ConcatLayer(layers, axis=0)

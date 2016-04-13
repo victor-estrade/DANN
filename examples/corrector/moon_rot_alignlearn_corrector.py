@@ -20,7 +20,7 @@ from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound, iterate_minibatches
 
-raise NotImplementedError('Experiment in progress')
+raise NotImplementedError('Coding in progress')
 
 
 # http://stackoverflow.com/questions/25886374/pdist-for-theano-tensor
@@ -29,9 +29,10 @@ X = T.fmatrix('X')
 Y = T.fmatrix('Y')
 translation_vectors = X.reshape((X.shape[0], 1, -1)) - Y.reshape((1, Y.shape[0], -1))
 euclidiean_distances = (translation_vectors ** 2).sum(2)
-f_euclidean = theano.function([X, Y], euclidiean_distances)
+f_euclidean = theano.function([X, Y], euclidiean_distances, allow_input_downcast=True)
 
-def kclosest(X, Y, k, batchsize=500):
+
+def kclosest(X, Y, k, batchsize=None):
     """
     Computes for each sample from X the k-closest samples in Y and return 
     their index.
@@ -46,44 +47,56 @@ def kclosest(X, Y, k, batchsize=500):
         kclosest : (numpy array [n_sample, k]) the ordered index of 
             the k-closest instances from Y to X samples
     """
-    size = X.shape[0]
-    dist = np.empty((size, size), dtype=theano.config.floatX)
-    
-    for start_idx in range(0, size - batchsize + 1, batchsize):
-        excerpt_X = slice(start_idx, start_idx + batchsize)
-        for start_idx in range(0, size - batchsize + 1, batchsize):
-            excerpt_Y = slice(start_idx, start_idx + batchsize)
-            
-            dist[excerpt_X, excerpt_Y] = f_euclidean(X[excerpt_X], Y[excerpt_Y])
-            
+    assert X.shape == Y.shape
+    N = X.shape[0]
+    if batchsize is None:
+        dist = f_euclidean(X, Y)
+    else:
+        dist = np.empty((N, N), dtype=theano.config.floatX)
+        batch = np.arange(0, N+batchsize, batchsize)
+        for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
+            for excerpt_Y in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
+                print('excerpt_X', excerpt_X, 'excerpt_y', excerpt_Y)
+                dist[excerpt_X, excerpt_Y] = f_euclidean(X[excerpt_X], Y[excerpt_Y])
     kbest = np.argsort(dist, axis=1)[:, :k]
     return kbest
 
 
+def f_output(X, trainer, batchsize):
+    N = X.shape[0]
+    X_out = np.empty_like(X)
+    batch = np.arange(0, N+batchsize, batchsize)
+    for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
+        X_out[excerpt_X] = trainer.output(X[excerpt_X])
+    return X_out 
 
-def classwise_shuffle(X, y):
-    """
-    Shuffle X without changing the class positions
 
-    Params
-    ------
-        X: the data (numpy array)
-        y: the labels 
-    Return
-    ------
-        X_shuffled: Shuffled X without changing the class matching
-    """
-    idx = np.empty_like(y, dtype=int)
+def epoch_align(data, trainer=None, batchsize=None, **kwargs):
+    if trainer is None:
+        raise ValueError('The trainer should be given to be able to learn alignment')
+
+    counter = np.zeros(data['X_train'].shape[0], dtype=int)
+    idx = np.empty_like(data['labels'], dtype=int)
     for label in np.unique(y):
-        arr = np.where(y==label)[0]
-        arr2 = np.random.permutation(arr)
-        idx[arr] = arr2
-    return X[idx]
+        # Get the examples of the right label
+        idx_label = np.where(y==label)[0]
+        # Get the output of this examples
+        X_out = f_output(X[idx_label], trainer)
 
+        # Get the k-closest index
+        idx_label2 = kclosest(X_out[idx_label], data['y_train'][idx_label], 3, batchsize=batchsize)
+        
+        # Choose the one that has been less chosen
+        for i1, i2 in zip(idx_label, idx_label2):
+            # i2 is an index array of shape (k,) with the sorted clostest 
+            #  example index (of the sorted single class array)
+            i = idx_label[i2[np.argmin(counter[i2])]]
+            # i contains the chosen (k-)clostest example with the minimum counter
+            counter[i] = counter[i]+1
+            idx[i1] = i
 
-def epoch_shuffle(self):
-    self['X_train'] = classwise_shuffle(self['X_train'], self['labels'])
-    return self
+    data['X_train'] = data['X_train'][idx]
+    return data
 
 
 def parseArgs():
@@ -155,23 +168,23 @@ def main():
     # Load Moon Dataset
     source_data, target_data, domain_data = load_moon(angle=angle, batchsize=batchsize)
     domain_data = {
-                'X_train':[source_data['X_train'], target_data['X_train']],
-                'X_val':[source_data['X_val'], target_data['X_val']],
-                'X_test':[source_data['X_test'], target_data['X_test']],
-                'y_train':None,
-                'y_val':None,
-                'y_test':None,
+                'X_train': [source_data['X_train'], target_data['X_train']],
+                'X_val': [source_data['X_val'], target_data['X_val']],
+                'X_test': [source_data['X_test'], target_data['X_test']],
+                'y_train': None,
+                'y_val': None,
+                'y_test': None,
                 'batchsize': batchsize,
                 }    
 
     corrector_data = dict(target_data)
     corrector_data.update({
-    	'y_train':source_data['X_train'],
-    	'y_val':source_data['X_val'],
-    	'y_test':source_data['X_test'],
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
         'labels': source_data['y_train']
         'batchsize': batchsize,
-    	})
+        })
     corrector_data['prepare'] = epoch_shuffle
 
     #=========================================================================
@@ -207,7 +220,7 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(output_layer, 
                                  squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
-    							 'corrector',)
+                                 'corrector',)
     if hp_lambda != 0.0:
         domain_trainner = Trainner(None, 
                                    adversarial([src_layer, output_layer], hp_lambda=hp_lambda,

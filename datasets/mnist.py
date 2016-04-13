@@ -18,7 +18,7 @@ np.random.seed(12345)
 data_dir = os.path.dirname(__file__)
 data_dir = os.path.join(data_dir, 'data')
 if not os.path.isdir(data_dir):
-	os.mkdir(data_dir)
+    os.mkdir(data_dir)
 
 # Get every images files from the BSR-BSDS500 training dataset
 bsr = os.path.join(data_dir, 'BSR/BSDS500/data/images/train/*.jpg')

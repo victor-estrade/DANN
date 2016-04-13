@@ -62,7 +62,7 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
 
         # Training : (forward and backward propagation)
         # done with the iterative functions
-        batches = tuple(iterate_minibatches(data['X_train'], data['y_train'], data['batchsize']) 
+        batches = tuple(iterate_minibatches(data['X_train'], data['y_train'], data['batchsize'], shuffle=True) 
                         for data in train_data)
         for minibatches in zip(*batches):
             for batch, trainer in zip(minibatches, trainers):

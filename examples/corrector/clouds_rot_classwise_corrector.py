@@ -217,18 +217,27 @@ def main():
     y = source_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
 
-    X = target_data['X_test']
-    y = target_data['y_test']
-    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
-    
     X = np.array(corrector_trainner.output(target_data['X_test'])).reshape((-1, 2))
     y = target_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap='Paired')
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-corrected_data.png', bbox_inches='tight')
 
+    fig, ax = plt.subplots()
+    X = source_data['X_test']
+    y = source_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
 
+    X = target_data['X_test']
+    y = target_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+    ax.set_title(title)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-target_data.png', bbox_inches='tight')
+
+    
 if __name__ == '__main__':
     main()
