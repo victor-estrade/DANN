@@ -121,15 +121,15 @@ def main():
 
     # Compilation
     logger.info('Compiling functions')
-    label_trainner = Trainner(label_clf.output_layer, crossentropy_sgd_mom(lr=label_rate, mom=label_mom), 'source')
-    domain_trainner = Trainner(domain_clf.output_layer, crossentropy_sgd_mom(lr=domain_rate, mom=domain_mom), 'domain')
-    target_trainner = Trainner(label_clf.output_layer, crossentropy_sgd_mom(lr=label_rate, mom=label_mom), 'target')
+    label_trainner = Trainner(crossentropy_sgd_mom(label_clf.output_layer, lr=label_rate, mom=label_mom), 'source')
+    domain_trainner = Trainner(crossentropy_sgd_mom(domain_clf.output_layer, lr=domain_rate, mom=domain_mom), 'domain')
+    target_tester = Trainner(crossentropy_sgd_mom(label_clf.output_layer, lr=label_rate, mom=label_mom), 'target')
 
     #=========================================================================
     # Train the Neural Network
     #=========================================================================
     stats = training([label_trainner, domain_trainner], [source_data, domain_data],
-                     testers=[target_trainner,], test_data=[target_data],
+                     testers=[target_tester,], test_data=[target_data],
                      num_epochs=num_epochs, logger=logger)
     
     #=========================================================================

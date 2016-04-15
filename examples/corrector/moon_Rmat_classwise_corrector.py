@@ -43,9 +43,9 @@ def classwise_shuffle(X, y):
     return X[idx]
 
 
-def epoch_shuffle(self):
-    self['X_train'] = classwise_shuffle(self['X_train'], self['labels'])
-    return self
+def epoch_shuffle(data):
+    data['X_train'] = classwise_shuffle(data['X_train'], data['labels'])
+    return data
 
 
 def parseArgs():
@@ -131,7 +131,6 @@ def main():
         'labels': source_data['y_train'],
         'batchsize': batchsize,
     	})
-    corrector_data['prepare'] = epoch_shuffle
 
     #=========================================================================
     # Prepare the logger
@@ -164,12 +163,11 @@ def main():
     
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, 
-                                 squared_error_sgd_mom(lr=label_rate, mom=0, target_var=target_var), 
-    							 'corrector',)
+    corrector_trainner = Trainner(squared_error_sgd_mom(output_layer, lr=label_rate, mom=0, target_var=target_var), 
+    							  'corrector',)
+    corrector_trainner.preprocess = epoch_shuffle
     if hp_lambda != 0.0:
-        domain_trainner = Trainner(None, 
-                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+        domain_trainner = Trainner(adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
                                               lr=domain_rate, mom=domain_mom),
                                    'domain')
 

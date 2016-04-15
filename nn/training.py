@@ -11,13 +11,15 @@ from utils import iterate_minibatches
 
 
 class Trainner(object):
-    def __init__(self, output_layer, compiler, name='trainer'):
+    def __init__(self, funs, name='trainer'):
         super(Trainner, self).__init__()
         self.name = name
-        funs = compiler(output_layer)
-        # Add the compile functions to the object
+        # Add the compiled functions to the object
         # by adding dynamic property to this object
         self.__dict__.update(funs)
+    
+    def preprocess(self, data):
+        pass
 
 
 def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logger=None):
@@ -56,9 +58,8 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
         stats = { key:[] for key in final_stats.keys()}
 
         # Do some trainning preparations :
-        for data in train_data+test_data:
-            if 'prepare' in data:
-                data = data['prepare'](data)
+        for data, trainer in zip(train_data+test_data, trainers+testers):
+            trainer.preprocess(data)
 
         # Training : (forward and backward propagation)
         # done with the iterative functions

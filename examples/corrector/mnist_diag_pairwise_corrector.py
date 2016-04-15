@@ -138,12 +138,10 @@ def main():
     
     # Compilation
     logger.info('Compiling functions')
-    corrector_trainner = Trainner(output_layer, 
-                                 squared_error_sgd_mom(lr=label_rate, mom=label_mom, target_var=target_var), 
-                                 'corrector',)
+    corrector_trainner = Trainner(squared_error_sgd_mom(output_layer, lr=label_rate, mom=label_mom, target_var=target_var), 
+                                  'corrector',)
     if hp_lambda != 0.0:
-        domain_trainner = Trainner(None, 
-                                   adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
+        domain_trainner = Trainner(adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
                                               lr=domain_rate, mom=domain_mom),
                                    'domain')
     

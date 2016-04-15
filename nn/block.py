@@ -225,5 +225,5 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
             'output': output_function
            }
 
-    return lambda ignored: funs
+    return funs
 

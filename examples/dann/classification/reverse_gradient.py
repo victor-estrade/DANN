@@ -14,6 +14,8 @@ import matplotlib.pyplot as plt
 
 from datasets.toys import load_moon
 from logs import log_fname, new_logger
+
+raise NotImplementedError('Deprecated')
 from nn.dann import AbstractDANN
 from nn.rgl import ReverseGradientLayer
 from nn.compilers import crossentropy_sgd_mom
