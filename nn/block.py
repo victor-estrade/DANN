@@ -180,7 +180,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     output_layer = clf.output_layer
 
     input_vars = [lasagne.layers.get_all_layers(layer)[0].input_var for layer in layers]
-    true_domains = [np.ones(lasagne.layers.get_all_layers(layer)[0].shape[0], dtype=np.int64)*i 
+    true_domains = [np.ones(lasagne.layers.get_all_layers(layer)[0].shape[0], dtype=np.int32)*i 
                         for i, layer in enumerate(layers)]
     true_domains = np.hstack(true_domains)
     
@@ -227,4 +227,3 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
 
     return lambda ignored: funs
 
-    

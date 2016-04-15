@@ -13,7 +13,7 @@ from utils import iterate_minibatches
 class Trainner(object):
     def __init__(self, output_layer, compiler, name='trainer'):
         super(Trainner, self).__init__()
-        self.name=name
+        self.name = name
         funs = compiler(output_layer)
         # Add the compile functions to the object
         # by adding dynamic property to this object

@@ -147,7 +147,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
     if target_size is not None and input_size is not None:
         assert target_size == input_size, 'inputs and targets should have the same number of examples'
 
-
     if shuffle:
         indices = np.arange(size)
         np.random.shuffle(indices)
