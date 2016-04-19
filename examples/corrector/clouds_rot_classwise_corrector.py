@@ -42,7 +42,7 @@ def classwise_shuffle(X, y):
     return X[idx]
 
 
-def epoch_shuffle(data):
+def epoch_shuffle(data, trainer, epoch, *args, **kwargs):
     data['X_train'] = classwise_shuffle(data['X_train'], data['labels'])
     return data
 
@@ -70,7 +70,7 @@ def parseArgs():
         default=30, type=int, dest='samples')
     parser.add_argument(
         '--classes', help='Number of classes in the dataset',
-        default=30, type=int, dest='classes')
+        default=12, type=int, dest='classes')
     parser.add_argument(
         '--batchsize', help='The mini-batch size',
         default=5, type=int, dest='batchsize')

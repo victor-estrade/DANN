@@ -10,7 +10,7 @@ from sklearn.datasets import make_moons
 # ============================================================================
 
 
-def load_moon(noise=0.05, angle=35., batchsize=32):
+def load_moon(noise=0.05, n_samples=500, angle=35., batchsize=32):
     """
     Load the Moon / Moon-rotated problem
 
@@ -28,7 +28,7 @@ def load_moon(noise=0.05, angle=35., batchsize=32):
         domain_data: dict with the separated data
 
     """
-    X, y = make_moons(n_samples=500, shuffle=True, noise=noise, random_state=12345)
+    X, y = make_moons(n_samples=n_samples, shuffle=True, noise=noise, random_state=12345)
     X = np.array(X, dtype=np.float32)
     y = np.array(y, dtype=np.int32)
     X_r = rotate_data(X, angle=angle)

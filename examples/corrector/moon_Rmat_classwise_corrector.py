@@ -43,7 +43,7 @@ def classwise_shuffle(X, y):
     return X[idx]
 
 
-def epoch_shuffle(data):
+def epoch_shuffle(data, trainer, epoch, *args, **kwargs):
     data['X_train'] = classwise_shuffle(data['X_train'], data['labels'])
     return data
 

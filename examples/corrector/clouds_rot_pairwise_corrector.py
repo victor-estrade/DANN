@@ -45,7 +45,7 @@ def parseArgs():
         default=30, type=int, dest='samples')
     parser.add_argument(
         '--classes', help='Number of classes in the dataset',
-        default=30, type=int, dest='classes')
+        default=12, type=int, dest='classes')
     parser.add_argument(
         '--batchsize', help='The mini-batch size',
         default=5, type=int, dest='batchsize')

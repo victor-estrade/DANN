@@ -13,37 +13,119 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from datasets.toys import load_moon
+from datasets.utils import random_mat_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
-from utils import plot_bound, iterate_minibatches
+from utils import plot_bound
+
+# raise NotImplementedError('Coding in progress')
 
 
-def classwise_shuffle(X, y):
+# http://stackoverflow.com/questions/25886374/pdist-for-theano-tensor
+# Tested and approved
+X = T.fmatrix('X')
+Y = T.fmatrix('Y')
+translation_vectors = X.reshape((X.shape[0], 1, -1)) - Y.reshape((1, Y.shape[0], -1))
+euclidiean_distances = (translation_vectors ** 2).sum(2)
+f_euclidean = theano.function([X, Y], euclidiean_distances, allow_input_downcast=True)
+
+
+def kclosest(X, Y, k, batchsize=None):
     """
-    Shuffle X without changing the class positions
+    Computes for each sample from X the k-closest samples in Y and return 
+    their index.
 
     Params
     ------
-        X: the data (numpy array)
-        y: the labels 
+        X: (numpy array [n_sample, n_feature])
+        Y: (numpy array [n_sample, n_feature])
+        k: (int)
     Return
     ------
-        X_shuffled: Shuffled X without changing the class matching
+        kclosest : (numpy array [n_sample, k]) the ordered index of 
+            the k-closest instances from Y to X samples
     """
+    assert X.shape == Y.shape
+    N = X.shape[0]
+    if batchsize is None:
+        dist = f_euclidean(X, Y)
+    else:
+        dist = np.empty((N, N), dtype=theano.config.floatX)
+        batch = np.arange(0, N+batchsize, batchsize)
+        for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
+            dist[excerpt_X] = f_euclidean(X[excerpt_X], Y)
+    kbest = np.argsort(dist, axis=1)[:, :k]
+    return kbest
+
+
+def realign(X_out, X_trg, y, k=5, batchsize=None):
+    counter = np.zeros(X_out.shape[0], dtype=int)
     idx = np.empty_like(y, dtype=int)
     for label in np.unique(y):
-        arr = np.where(y==label)[0]
-        arr2 = np.random.permutation(arr)
-        idx[arr] = arr2
-    return X[idx]
+        # Get the examples of the right label
+        idx_label = np.where(y==label)[0]
+
+        # Get the k-closest index ... shape = ... ça va pas du tout !
+        idx_label2 = kclosest(X_out[idx_label], X_trg[idx_label], k, batchsize=batchsize)
+        
+        for i1, i2 in zip(idx_label, idx_label2):
+            # i2 is an index array of shape (k,) with the sorted closest example index 
+            # (of the sorted single class array)
+            # Then idx_label[i2] are the sorted original index of the k-closest examples
+            i = idx_label[i2[np.argmin(counter[idx_label[i2]])]]
+            # i contains the chosen one, in the (k-)clostest example, with the minimum counter
+            counter[i] = counter[i]+1
+            idx[i1] = i
+    return idx
 
 
-def epoch_shuffle(data, trainer, epoch, *args, **kwargs):
-    data['X_train'] = classwise_shuffle(data['X_train'], data['labels'])
-    return data
+def batchpad(batchsize, output_shape, dtype=None):
+    """Re-batching decorator
+    """
+    def decoreted(func):
+        def wrapper(X, *args, **kwargs):
+            if dtype is None:
+                dtype2 = X.dtype
+            else:
+                dtype2 = dtype
+            
+            N = X.shape[0]
+            
+            if output_shape is None:
+                shape = X.shape
+            else:
+                shape = tuple( out_s if out_s is not None else X_s for out_s, X_s in zip(output_shape, X.shape))
+
+            result = np.empty(shape, dtype=dtype2)
+            batch = np.arange(0, N+batchsize, batchsize)
+            for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-2], batch[1:])):
+                result[excerpt_X] = func(X[excerpt_X], *args, **kwargs)
+            
+            last_excerpt = slice(batch[-2], batch[-1])
+            X = X[last_excerpt]
+            n_sample = X.shape[0]
+            X = np.pad(X, ((0,batchsize-X.shape[0]), (0,0)), 'constant', constant_values=0)
+            X = func(X, *args, **kwargs)
+            result[last_excerpt] = X[:n_sample]
+            
+            return result
+        return wrapper
+    return decoreted
+
+
+def preprocess(data, trainer, epoch):
+    X = data['X_train']
+
+    @batchpad(data['batchsize'], X.shape, X.dtype)
+    def f_output(X, trainer):
+        return trainer.output(X)[0]
+    
+    X_out = f_output(X, trainer)
+    X_trg = data['y_train']
+    data['X_train'] = X[realign(X_out, X_trg, data['labels'], k=200, batchsize=None)]
 
 
 def parseArgs():
@@ -105,30 +187,31 @@ def main():
     domain_mom = args.domain_mom
 
     # Set up the naming information :
-    data_name = 'MoonRotated'
-    model = 'ClassWiseCorrector'
+    data_name = 'MoonRMat'
+    model = 'AlignLearnCorrector'
     title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     #=========================================================================
     # Load, Generate the datasets
     #=========================================================================
     # Load Moon Dataset
-    source_data, target_data, domain_data = load_moon(angle=angle, batchsize=batchsize)
+    source_data, target_data, domain_data = load_moon(batchsize=batchsize)
+    source_data, target_data, domain_data = random_mat_dataset(source_data)
     domain_data = {
-                'X_train':[source_data['X_train'], target_data['X_train']],
-                'X_val':[source_data['X_val'], target_data['X_val']],
-                'X_test':[source_data['X_test'], target_data['X_test']],
-                'y_train':None,
-                'y_val':None,
-                'y_test':None,
+                'X_train': [source_data['X_train'], target_data['X_train']],
+                'X_val': [source_data['X_val'], target_data['X_val']],
+                'X_test': [source_data['X_test'], target_data['X_test']],
+                'y_train': None,
+                'y_val': None,
+                'y_test': None,
                 'batchsize': batchsize,
                 }    
 
     corrector_data = dict(target_data)
     corrector_data.update({
-        'y_train':source_data['X_train'],
-        'y_val':source_data['X_val'],
-        'y_test':source_data['X_test'],
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
         'labels': source_data['y_train'],
         'batchsize': batchsize,
         })
@@ -166,7 +249,8 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(squared_error_sgd_mom(output_layer, lr=label_rate, mom=0, target_var=target_var), 
                                   'corrector',)
-    corrector_trainner.preprocess = epoch_shuffle
+    corrector_trainner.preprocess = preprocess
+
     if hp_lambda != 0.0:
         domain_trainner = Trainner(adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
                                               lr=domain_rate, mom=domain_mom),
@@ -208,18 +292,54 @@ def main():
     y = source_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
 
-    X = target_data['X_test']
-    y = target_data['y_test']
-    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
-
     X = np.array(corrector_trainner.output(target_data['X_test'])).reshape((-1, 2))
     y = target_data['y_test']
-    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap=cm_bright)
+    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, edgecolors=color.to_rgba(y), facecolors=color.to_rgba(y))
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-corrected_data.png', bbox_inches='tight')
 
+    fig, ax = plt.subplots()
+    X = source_data['X_test']
+    y = source_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = target_data['X_test']
+    y = target_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+    ax.set_title(title)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-target_data.png', bbox_inches='tight')
+
+# ======================= TO REMOVE ===========================
+    # Plot the train data
+    fig, ax = plt.subplots()
+    X = source_data['X_train']
+    y = source_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = np.array(corrector_trainner.output(target_data['X_train'])).reshape((-1, 2))
+    y = target_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, edgecolors=color.to_rgba(y), facecolors=color.to_rgba(y))
+    ax.set_title(title+'TRAIN')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-corrected_dataTRAIN.png', bbox_inches='tight')
+
+    fig, ax = plt.subplots()
+    X = source_data['X_train']
+    y = source_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = target_data['X_train']
+    y = target_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+    ax.set_title(title+'TRAIN')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-target_dataTRAIN.png', bbox_inches='tight')
 
 if __name__ == '__main__':
     main()

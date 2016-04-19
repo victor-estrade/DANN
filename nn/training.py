@@ -18,7 +18,7 @@ class Trainner(object):
         # by adding dynamic property to this object
         self.__dict__.update(funs)
     
-    def preprocess(self, data):
+    def preprocess(self, *args, **kwargs):
         pass
 
 
@@ -59,7 +59,7 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
 
         # Do some trainning preparations :
         for data, trainer in zip(train_data+test_data, trainers+testers):
-            trainer.preprocess(data)
+            trainer.preprocess(data, trainer, epoch)
 
         # Training : (forward and backward propagation)
         # done with the iterative functions

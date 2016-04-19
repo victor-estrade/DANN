@@ -18,9 +18,9 @@ from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
-from utils import plot_bound, iterate_minibatches
+from utils import plot_bound
 
-raise NotImplementedError('Coding in progress')
+# raise NotImplementedError('Coding in progress')
 
 
 # http://stackoverflow.com/questions/25886374/pdist-for-theano-tensor
@@ -55,48 +55,76 @@ def kclosest(X, Y, k, batchsize=None):
         dist = np.empty((N, N), dtype=theano.config.floatX)
         batch = np.arange(0, N+batchsize, batchsize)
         for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
-            for excerpt_Y in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
-                print('excerpt_X', excerpt_X, 'excerpt_y', excerpt_Y)
-                dist[excerpt_X, excerpt_Y] = f_euclidean(X[excerpt_X], Y[excerpt_Y])
+            dist[excerpt_X] = f_euclidean(X[excerpt_X], Y)
     kbest = np.argsort(dist, axis=1)[:, :k]
     return kbest
 
 
-def f_output(X, trainer, batchsize):
-    N = X.shape[0]
-    X_out = np.empty_like(X)
-    batch = np.arange(0, N+batchsize, batchsize)
-    for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-1], batch[1:])):
-        X_out[excerpt_X] = trainer.output(X[excerpt_X])
-    return X_out 
-
-
-def epoch_align(data, trainer=None, batchsize=None, **kwargs):
-    if trainer is None:
-        raise ValueError('The trainer should be given to be able to learn alignment')
-
-    counter = np.zeros(data['X_train'].shape[0], dtype=int)
-    idx = np.empty_like(data['labels'], dtype=int)
+def realign(X_out, X_trg, y, k=5, batchsize=None):
+    counter = np.zeros(X_out.shape[0], dtype=int)
+    idx = np.empty_like(y, dtype=int)
     for label in np.unique(y):
         # Get the examples of the right label
         idx_label = np.where(y==label)[0]
-        # Get the output of this examples
-        X_out = f_output(X[idx_label], trainer)
 
-        # Get the k-closest index
-        idx_label2 = kclosest(X_out[idx_label], data['y_train'][idx_label], 3, batchsize=batchsize)
+        # Get the k-closest index ... shape = ... ça va pas du tout !
+        idx_label2 = kclosest(X_out[idx_label], X_trg[idx_label], k, batchsize=batchsize)
         
-        # Choose the one that has been less chosen
         for i1, i2 in zip(idx_label, idx_label2):
-            # i2 is an index array of shape (k,) with the sorted clostest 
-            #  example index (of the sorted single class array)
-            i = idx_label[i2[np.argmin(counter[i2])]]
-            # i contains the chosen (k-)clostest example with the minimum counter
+            # i2 is an index array of shape (k,) with the sorted closest example index 
+            # (of the sorted single class array)
+            # Then idx_label[i2] are the sorted original index of the k-closest examples
+            i = idx_label[i2[np.argmin(counter[idx_label[i2]])]]
+            # i contains the chosen one, in the (k-)clostest example, with the minimum counter
             counter[i] = counter[i]+1
             idx[i1] = i
+    return idx
 
-    data['X_train'] = data['X_train'][idx]
-    return data
+
+def batchpad(batchsize, output_shape, dtype=None):
+    """Re-batching decorator
+    """
+    def decoreted(func):
+        def wrapper(X, *args, **kwargs):
+            if dtype is None:
+                dtype2 = X.dtype
+            else:
+                dtype2 = dtype
+            
+            N = X.shape[0]
+            
+            if output_shape is None:
+                shape = X.shape
+            else:
+                shape = tuple( out_s if out_s is not None else X_s for out_s, X_s in zip(output_shape, X.shape))
+
+            result = np.empty(shape, dtype=dtype2)
+            batch = np.arange(0, N+batchsize, batchsize)
+            for excerpt_X in (slice(i0, i1) for i0, i1 in zip(batch[:-2], batch[1:])):
+                result[excerpt_X] = func(X[excerpt_X], *args, **kwargs)
+            
+            last_excerpt = slice(batch[-2], batch[-1])
+            X = X[last_excerpt]
+            n_sample = X.shape[0]
+            X = np.pad(X, ((0,batchsize-X.shape[0]), (0,0)), 'constant', constant_values=0)
+            X = func(X, *args, **kwargs)
+            result[last_excerpt] = X[:n_sample]
+            
+            return result
+        return wrapper
+    return decoreted
+
+
+def preprocess(data, trainer, epoch):
+    X = data['X_train']
+
+    @batchpad(data['batchsize'], X.shape, X.dtype)
+    def f_output(X, trainer):
+        return trainer.output(X)[0]
+    
+    X_out = f_output(X, trainer)
+    X_trg = data['y_train']
+    data['X_train'] = X[realign(X_out, X_trg, data['labels'], k=200, batchsize=None)]
 
 
 def parseArgs():
@@ -159,7 +187,7 @@ def main():
 
     # Set up the naming information :
     data_name = 'MoonRotated'
-    model = 'ClassWiseCorrector'
+    model = 'AlignLearnCorrector'
     title = '{}-{}-lambda-{:.2e}'.format(data_name, model, hp_lambda)
 
     #=========================================================================
@@ -182,10 +210,9 @@ def main():
         'y_train': source_data['X_train'],
         'y_val': source_data['X_val'],
         'y_test': source_data['X_test'],
-        'labels': source_data['y_train']
+        'labels': source_data['y_train'],
         'batchsize': batchsize,
         })
-    corrector_data['prepare'] = epoch_shuffle
 
     #=========================================================================
     # Prepare the logger
@@ -220,6 +247,8 @@ def main():
     logger.info('Compiling functions')
     corrector_trainner = Trainner(squared_error_sgd_mom(output_layer, lr=label_rate, mom=0, target_var=target_var), 
                                   'corrector',)
+    corrector_trainner.preprocess = preprocess
+
     if hp_lambda != 0.0:
         domain_trainner = Trainner(adversarial([src_layer, output_layer], hp_lambda=hp_lambda,
                                               lr=domain_rate, mom=domain_mom),
@@ -261,18 +290,54 @@ def main():
     y = source_data['y_test']
     ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
 
-    X = target_data['X_test']
-    y = target_data['y_test']
-    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
-
     X = np.array(corrector_trainner.output(target_data['X_test'])).reshape((-1, 2))
     y = target_data['y_test']
-    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, c=y, cmap=cm_bright)
+    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, edgecolors=color.to_rgba(y), facecolors=color.to_rgba(y))
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    fig.savefig('fig/'+title+'-data.png', bbox_inches='tight')
+    fig.savefig('fig/'+title+'-corrected_data.png', bbox_inches='tight')
 
+    fig, ax = plt.subplots()
+    X = source_data['X_test']
+    y = source_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = target_data['X_test']
+    y = target_data['y_test']
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+    ax.set_title(title)
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-target_data.png', bbox_inches='tight')
+
+# ======================= TO REMOVE ===========================
+    # Plot the train data
+    fig, ax = plt.subplots()
+    X = source_data['X_train']
+    y = source_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = np.array(corrector_trainner.output(target_data['X_train'])).reshape((-1, 2))
+    y = target_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='x', s=80, edgecolors=color.to_rgba(y), facecolors=color.to_rgba(y))
+    ax.set_title(title+'TRAIN')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-corrected_dataTRAIN.png', bbox_inches='tight')
+
+    fig, ax = plt.subplots()
+    X = source_data['X_train']
+    y = source_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+
+    X = target_data['X_train']
+    y = target_data['y_train']
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='D', s=80, edgecolors=color.to_rgba(y), facecolors='none')
+    ax.set_title(title+'TRAIN')
+    handles, labels = ax.get_legend_handles_labels()
+    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    fig.savefig('fig/'+title+'-target_dataTRAIN.png', bbox_inches='tight')
 
 if __name__ == '__main__':
     main()

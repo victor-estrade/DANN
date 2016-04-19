@@ -42,7 +42,7 @@ def classwise_shuffle(X, y):
     return X[idx]
 
 
-def epoch_shuffle(data):
+def epoch_shuffle(data, trainer, epoch, *args, **kwargs):
     data['X_train'] = classwise_shuffle(data['X_train'], data['labels'])
     return data
 
@@ -120,7 +120,7 @@ def main():
                 'y_val':None,
                 'y_test':None,
                 'batchsize': batchsize,
-                }    
+                }
     corrector_data = dict(target_data)
     corrector_data.update({
         'y_train': source_data['X_train'],
