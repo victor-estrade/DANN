@@ -12,15 +12,14 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.toys import load_cloud_rotated
+from datasets.toys import load_cloud
+from datasets.utils import rotate_dataset, make_domain_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier, adversarial
 from nn.compilers import squared_error_sgd_mom, crossentropy_sgd_mom
 from nn.training import Trainner, training
 from utils import plot_bound
-
-# raise NotImplementedError('Coding in progress')
 
 
 # http://stackoverflow.com/questions/25886374/pdist-for-theano-tensor
@@ -201,17 +200,10 @@ def main():
     #=========================================================================
     # Load, Generate the datasets
     #=========================================================================
-    # Load Moon Dataset
-    source_data, target_data, domain_data = load_cloud_rotated(n_sample=samples, n_classes=classes, angle=angle, batchsize=batchsize)
-    domain_data = {
-                'X_train': [source_data['X_train'], target_data['X_train']],
-                'X_val': [source_data['X_val'], target_data['X_val']],
-                'X_test': [source_data['X_test'], target_data['X_test']],
-                'y_train': None,
-                'y_val': None,
-                'y_test': None,
-                'batchsize': batchsize,
-                }    
+    # Load Cloud Dataset
+    source_data = load_cloud(n_sample=samples, n_classes=classes, batchsize=batchsize)
+    target_data = rotate_dataset(source_data, angle=angle)
+    domain_data = make_domain_dataset([source_data, target_data])
 
     corrector_data = dict(target_data)
     corrector_data.update({

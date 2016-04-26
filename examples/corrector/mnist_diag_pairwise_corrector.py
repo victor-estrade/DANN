@@ -12,8 +12,8 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.mnist import load_mnist_src
-from datasets.utils import diag_dataset
+from datasets.mnist import load_mnist
+from datasets.utils import diag_dataset, make_domain_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier, adversarial
@@ -85,17 +85,9 @@ def main():
     # Load, Generate the datasets
     #=========================================================================
     # Load MNIST Dataset
-    source_data = load_mnist_src(batchsize=batchsize)
-    source_data, target_data, domain_data = diag_dataset(source_data, normalize=True)
-    domain_data = {
-                'X_train':[source_data['X_train'], target_data['X_train']],
-                'X_val':[source_data['X_val'], target_data['X_val']],
-                'X_test':[source_data['X_test'], target_data['X_test']],
-                'y_train':None,
-                'y_val':None,
-                'y_test':None,
-                'batchsize': batchsize,
-                }    
+    source_data = load_mnist(batchsize=batchsize)
+    target_data = diag_dataset(source_data)
+    domain_data = make_domain_dataset([source_data, target_data])
 
     corrector_data = dict(target_data)
     corrector_data.update({

@@ -17,6 +17,7 @@ data_dir = os.path.join(data_dir, 'data')
 
 def load_svhn_src(roll=True, batchsize=600):
     """
+    TODO : read again and rework it !
     """
     data = io.loadmat(os.path.join(data_dir,'train_32x32.mat'))
     X = data['X']
@@ -41,4 +42,5 @@ def load_svhn_src(roll=True, batchsize=600):
             }
     return data
 
-load_svhn_src()
+if __name__ == '__main__':
+    load_svhn_src()

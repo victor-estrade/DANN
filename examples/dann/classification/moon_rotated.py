@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from datasets.toys import load_moon
+from datasets.utils import rotate_dataset, make_domain_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier
@@ -86,8 +87,9 @@ def main():
     # Load, Generate the datasets
     #=========================================================================
     # Load Moon Dataset
-    source_data, target_data, domain_data = load_moon(angle=angle, batchsize=batchsize)
-    datas = [source_data, domain_data, target_data]
+    source_data = load_moon(batchsize=batchsize)
+    target_data = rotate_dataset(source_data, angle=angle)
+    domain_data = make_domain_dataset([source_data, target_data])
 
     #=========================================================================
     # Prepare the logger
