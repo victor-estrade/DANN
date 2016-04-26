@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import numpy as np
-from utils import shuffle_array, make_domain_dataset, rotate_data
+from utils import shuffle_array
 from sklearn.datasets import make_moons
 
 # ============================================================================
@@ -10,37 +10,32 @@ from sklearn.datasets import make_moons
 # ============================================================================
 
 
-def load_moon(noise=0.05, n_samples=500, angle=35., batchsize=32):
+def load_moon(noise=0.05, n_samples=500, batchsize=32):
     """
-    Load the Moon / Moon-rotated problem
+    Load the Moon dataset using sklearn.datasets.make_moons() function.
 
     Params
     ------
         noise: (default=0.05) the noise of the moon data generator
-        angle: (default=35.0) the angle (in degree) of the rotated Moons
-        shape: (default=(-1, 28, 28, 3)) the output shape of the data.
-            Should be (-1, 3, 28, 28) to be used by convolution layers.
+        n_samples: (default=500) the total number of points generated
+        batchsize: (default=32) the dataset batchsize
     
     Return
     ------
         source_data: dict with the separated data
-        target_data: dict with the separated data
-        domain_data: dict with the separated data
 
     """
     X, y = make_moons(n_samples=n_samples, shuffle=True, noise=noise, random_state=12345)
     X = np.array(X, dtype=np.float32)
     y = np.array(y, dtype=np.int32)
-    X_r = rotate_data(X, angle=angle)
-
-    X_S, y_S, X_T, y_T = shuffle_array(X, y, X_r, y)
-    # X_T, y_T = shuffle_array(X_r, y)
-
-    X_train, X_val, X_test = X_S[0:300], X_S[300:400], X_S[400:]
-    y_train, y_val, y_test = y_S[0:300], y_S[300:400], y_S[400:]
     
-    X_t_train, X_t_val, X_t_test = X_T[0:300], X_T[300:400], X_T[400:]
-    y_t_train, y_t_val, y_t_test = y_T[0:300], y_T[300:400], y_T[400:]
+    X, y = shuffle_array(X, y)  # Usefull ?
+
+    n_train = int(0.3*n_samples)
+    n_val = int(0.3*n_samples)+n_train
+
+    X_train, X_val, X_test = X_S[0:n_train], X_S[n_train:n_val], X_S[n_val:]
+    y_train, y_val, y_test = y_S[0:n_train], y_S[n_train:n_val], y_S[n_val:]
     
     source_data = {
                     'X_train': X_train,
@@ -49,21 +44,9 @@ def load_moon(noise=0.05, n_samples=500, angle=35., batchsize=32):
                     'y_val': y_val,
                     'X_test': X_test,
                     'y_test': y_test,
-                    'batchsize':batchsize,
+                    'batchsize': batchsize,
                     }
-
-    target_data = {
-                    'X_train': X_t_train,
-                    'y_train': y_t_train,
-                    'X_val': X_t_val,
-                    'y_val': y_t_val,
-                    'X_test': X_t_test,
-                    'y_test': y_t_test,
-                    'batchsize':batchsize,
-                    }
-
-    domain_data = make_domain_dataset([source_data, target_data])
-    return source_data, target_data, domain_data
+    return source_data
 
 
 def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
@@ -72,15 +55,17 @@ def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
 
     Params
     ------
-        n_sample: (default=500) the number of trainning sample in each class
-            (validation and test have n_sample/2 samples)
+        n_sample: (default=50) the number of sample in each class and in each set.
+            Example : 50 samples and 3 classes means 150 training points 150 validation points 
+            and 150 test points
         n_classes: (default=2) the number of classes
-        batchsize: the batchsize
+        batchsize: the batchsize of the dataset
     
     Return
     ------
         source_data: dict with the separated data
     """
+    # pos is the 2D positions as complex exponential numbers, root of unity solutions
     pos = [np.exp(2j*np.pi*i/n_classes) for i in range(n_classes)]
 
     X_train = np.empty((n_sample*n_classes, 2))
@@ -113,21 +98,6 @@ def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
                     }
     return source_data
 
-
-def load_cloud_rotated(n_sample=50 ,n_classes=2, batchsize=5, angle=90):
-    source_data = load_clouds(n_sample=n_sample ,n_classes=n_classes, batchsize=batchsize)
-    target_data = {
-                    'X_train': rotate_data(source_data['X_train'], angle=angle),
-                    'y_train': source_data['y_train'],
-                    'X_val': rotate_data(source_data['X_val'], angle=angle),
-                    'y_val': source_data['y_val'],
-                    'X_test': rotate_data(source_data['X_test'], angle=angle),
-                    'y_test': source_data['y_test'],
-                    'batchsize': source_data['batchsize'],
-                    }
-
-    domain_data = make_domain_dataset([source_data, target_data])
-    return source_data, target_data, domain_data
 
 if __name__ == '__main__':
     load_moon()

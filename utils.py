@@ -130,7 +130,7 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         size = input_size
         data += (inputs,)
 
-    # Handle multipleor None targets :
+    # Handle multiple or None targets :
     if targets is None:
         target_size = None
     elif isinstance(targets, tuple) or isinstance(targets, list):
