@@ -12,8 +12,9 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.toys import load_cloud
-from datasets.utils import random_mat_dataset, make_domain_dataset
+from datasets.toys import load_clouds
+from datasets.transform import random_mat_dataset
+from datasets.utils import make_domain_dataset
 from logs import log_fname, new_logger
 from nn.rgl import ReverseGradientLayer
 from nn.block import Dense, Classifier, adversarial
@@ -104,8 +105,8 @@ def main():
     #=========================================================================
     args = parseArgs()
     angle = args.angle
-    samples = args.samples
-    classes = args.classes
+    n_samples = args.samples
+    n_classes = args.classes
     batchsize = args.batchsize
     num_epochs = args.num_epochs
     hp_lambda = args.hp_lambda
@@ -123,7 +124,7 @@ def main():
     # Load, Generate the datasets
     #=========================================================================
     # Load Cloud Dataset
-    source_data = load_cloud(n_sample=samples, n_classes=classes, batchsize=batchsize)
+    source_data = load_clouds(n_samples=n_samples, n_classes=n_classes, batchsize=batchsize)
     target_data = random_mat_dataset(source_data)
     domain_data = make_domain_dataset([source_data, target_data])
 
