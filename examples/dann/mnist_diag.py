@@ -12,13 +12,13 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from datasets.mnist import load_mnist
-from datasets.transform import diag_dataset
-from datasets.utils import make_domain_dataset
-from logs import log_fname, new_logger
-from nn.clone import clone_layer
-from nn.compilers import crossentropy_sgd_mom, adversarial
-from nn.training import Trainner, training
+from ..datasets.mnist import load_mnist
+from ..datasets.transform import diag_dataset
+from ..datasets.utils import make_domain_dataset
+from ..logs import log_fname, new_logger
+from ..nn.clone import clone_layer
+from ..nn.compilers import crossentropy_sgd_mom, adversarial
+from ..nn.training import Trainner, training
 
 from utils import plot_bound, save_confusion_matrix
 from sklearn.metrics import confusion_matrix
