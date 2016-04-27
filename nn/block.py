@@ -2,9 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
-import sys
-import os
-import time
 import abc
 
 import theano
@@ -14,8 +11,6 @@ import numpy as np
 import theano.tensor as T
 
 from rgl import ReverseGradientLayer
-from logs import log_fname, new_logger
-from utils import iterate_minibatches
 
 
 class AbstractBlock(lasagne.layers.Layer):

@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+from __future__ import division, print_function
+
+import theano
+import lasagne
+
+import theano.tensor as T
+
+
+def clone_DenseLayer(layer, input_layer=None):
+    if not isinstance(layer, lasagne.layers.DenseLayer):
+        raise ValueError("The given layer should be a lasagne.layers.DenseLayer,"
+                         "{} given".format(layer.__class__))
+    else:
+        if input_layer is None:
+            input_layer = layer.input_layer
+        return lasagne.layers.DenseLayer(input_layer,
+                                        num_units=layer.num_units,
+                                        nonlinearity=layer.nonlinearity,
+                                        W=layer.W, b=layer.b)
+
+
+# Clone factory
+clonable_layers = {
+    lasagne.layers.DenseLayer: clone_DenseLayer
+}
+
+
+def clone_layer(layer, input_layer=None):
+    if layer.__class__ in clonable_layers:
+        return clonable_layers[layer.__class__](layer, input_layer)
+    else:
+        raise NotImplementedError('{} is not a clonable layer (yet)'.format(layer.__class__))
+    
