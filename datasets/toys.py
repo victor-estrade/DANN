@@ -10,7 +10,7 @@ from sklearn.datasets import make_moons
 # ============================================================================
 
 
-def load_moon(noise=0.05, n_samples=500, batchsize=32):
+def load_moons(noise=0.05, n_samples=500, batchsize=32):
     """
     Load the Moon dataset using sklearn.datasets.make_moons() function.
 
@@ -31,11 +31,11 @@ def load_moon(noise=0.05, n_samples=500, batchsize=32):
     
     X, y = shuffle_array(X, y)  # Usefull ?
 
-    n_train = int(0.3*n_samples)
+    n_train = int(0.4*n_samples)
     n_val = int(0.3*n_samples)+n_train
 
-    X_train, X_val, X_test = X_S[0:n_train], X_S[n_train:n_val], X_S[n_val:]
-    y_train, y_val, y_test = y_S[0:n_train], y_S[n_train:n_val], y_S[n_val:]
+    X_train, X_val, X_test = X[0:n_train], X[n_train:n_val], X[n_val:]
+    y_train, y_val, y_test = y[0:n_train], y[n_train:n_val], y[n_val:]
     
     source_data = {
                     'X_train': X_train,
@@ -49,13 +49,13 @@ def load_moon(noise=0.05, n_samples=500, batchsize=32):
     return source_data
 
 
-def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
+def load_clouds(n_samples=50 ,n_classes=2, batchsize=5):
     """
     Dataset made from normal distributions localised at root of unity solution.
 
     Params
     ------
-        n_sample: (default=50) the number of sample in each class and in each set.
+        n_samples: (default=50) the number of sample in each class and in each set.
             Example : 50 samples and 3 classes means 150 training points 150 validation points 
             and 150 test points
         n_classes: (default=2) the number of classes
@@ -68,20 +68,20 @@ def load_clouds(n_sample=50 ,n_classes=2, batchsize=5):
     # pos is the 2D positions as complex exponential numbers, root of unity solutions
     pos = [np.exp(2j*np.pi*i/n_classes) for i in range(n_classes)]
 
-    X_train = np.empty((n_sample*n_classes, 2))
-    X_train[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
-    X_train[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
-    y_train = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+    X_train = np.empty((n_samples*n_classes, 2))
+    X_train[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_samples) for p in pos])
+    X_train[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_samples) for p in pos])
+    y_train = np.hstack([np.ones(n_samples)*i for i in range(n_classes)])
 
-    X_val = np.empty((n_sample*n_classes, 2))
-    X_val[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
-    X_val[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
-    y_val = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+    X_val = np.empty((n_samples*n_classes, 2))
+    X_val[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_samples) for p in pos])
+    X_val[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_samples) for p in pos])
+    y_val = np.hstack([np.ones(n_samples)*i for i in range(n_classes)])
 
-    X_test = np.empty((n_sample*n_classes, 2))
-    X_test[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_sample) for p in pos])
-    X_test[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_sample) for p in pos])
-    y_test = np.hstack([np.ones(n_sample)*i for i in range(n_classes)])
+    X_test = np.empty((n_samples*n_classes, 2))
+    X_test[:, 0] = np.hstack([np.random.normal(np.imag(p), 1/n_classes, size=n_samples) for p in pos])
+    X_test[:, 1] = np.hstack([np.random.normal(np.real(p), 1/n_classes, size=n_samples) for p in pos])
+    y_test = np.hstack([np.ones(n_samples)*i for i in range(n_classes)])
 
     X_train, y_train = shuffle_array(X_train, y_train)
     X_val, y_val = shuffle_array(X_val, y_val)

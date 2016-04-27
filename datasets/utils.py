@@ -53,11 +53,33 @@ def make_domain_dataset(datasets):
             'y_train': None,
             'y_val': None,
             'y_test': None,
-            'batchsize': batchsize,
+            'batchsize': data['batchsize'],
             }
 
     return domain_data
 
+
+def make_corrector_dataset(source_data, target_data):    
+    """
+    Make a corrector datasets out of the given datasets.
+
+    Params
+    ------
+        datasets: a list of datasets (dicts with the separated data)
+
+    Return
+    ------
+        domain_data: dict with the separated data
+    """
+    corrector_data = dict(target_data)
+    corrector_data.update({
+        'y_train': source_data['X_train'],
+        'y_val': source_data['X_val'],
+        'y_test': source_data['X_test'],
+        'labels': source_data['y_train'],
+        'batchsize': source_data['batchsize'],
+        })
+    return corrector_data
 
 if __name__ == '__main__':
     a = np.arange(20).reshape(-1, 2)
