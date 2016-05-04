@@ -122,31 +122,15 @@ def load_mnist(batchsize=500, shape=(-1, 28, 28)):
     return source_data
 
 
-
-
 if __name__ == '__main__':
     print('I am at your service, master.')
     # source, target, domain = load_mnistM()
     # source, target, domain = load_mnist_invert(roll=False)
-    source, target, domain = load_mnist_mirror()
+    source = load_mnist()
     X_S, y_S = source['X_train'], source['y_train']
-    X_T, y_T = target['X_train'], target['y_train']
     np.random.seed(None)
     i = np.random.randint(X_S.shape[0])
 
     plt.imshow(X_S[i])
     plt.title('AVANT-label='+str(y_S[i]))
     plt.show()
-    plt.imshow(X_T[i])
-    plt.title('APRES-label='+str(y_T[i]))
-    plt.show()
-    
-    # SAVE DATA
-    # if not os.path.isdir('data/train/'):
-    #     os.mkdir('data/train/')
-
-    # with open('data/train/minist.pkl', 'wb') as f:
-    #     pickle.dump({'X': X, 'y':y}, f)
-
-    # np.save('data/train/minist', X)
-    # np.save('data/train/minist-m', new_X)

@@ -28,8 +28,7 @@ clonable_layers = {
 
 
 def clone_layer(layer, input_layer=None):
-    if layer.__class__ in clonable_layers:
+    if any([isinstance(layer, key) for key in clonable_layers.keys()]):
         return clonable_layers[layer.__class__](layer, input_layer)
     else:
         raise NotImplementedError('{} is not a clonable layer (yet)'.format(layer.__class__))
-    
