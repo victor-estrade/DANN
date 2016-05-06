@@ -18,6 +18,7 @@ def plot_curve(stats, ax=None, label=None):
     ax.plot(stats, label=label)
     return fig, ax
 
+
 def plot_mat(mat, ax=None):
 	"""
 	Plot the given matrix.
@@ -29,6 +30,7 @@ def plot_mat(mat, ax=None):
         fig = ax.get_figure()
     sns.heatmap(mat, cmap=plt.cm.coolwarm, ax=ax)
     return fig, ax
+
 
 def add_legend(ax, xlabel='', ylabel='', title=''):
     """
@@ -108,4 +110,44 @@ def plot_learning_curve(stats, regex='acc', title=''):
         ax.plot(final_stats[k], label=k)
     add_legend(ax, xlabel='epoch', ylabel='loss')
     fig.suptitle(title)
+    return fig, ax
+
+
+def plot_bound(X, y, predict_fn, ax=None):
+    """
+    Plot the bounds of a 2D dataset (X,y) given a probability prediction
+    function.
+    
+    Params
+    ------
+        X: the data
+        y: the true labels
+        predict_fn: the probability prediction function
+        ax: (default=None) the axes
+    Return
+    ------
+        fig: the figure
+        ax: the axes
+    """
+    from matplotlib.colors import ListedColormap
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, .02),
+                         np.arange(y_min, y_max, .02))
+    Z = predict_fn(np.c_[xx.ravel(), yy.ravel()])
+    Z = np.array(Z)[0, :, 1]
+    # Put the result into a color plot
+    Z = Z.reshape(xx.shape)
+    cm = plt.cm.RdBu
+    cm_bright = ListedColormap(['#FF0000', '#0000FF', '#00FF00'])
+    ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
+
+    # Plot also the training points
+    ax.scatter(X[:, 0], X[:, 1], c=y, cmap=cm_bright)
+    ax.xlim(xx.min(), xx.max())
+    ax.ylim(yy.min(), yy.max())
     return fig, ax
