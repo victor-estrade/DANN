@@ -6,7 +6,7 @@ from utils import shuffle_array
 from sklearn.datasets import make_moons
 
 # ============================================================================
-#                   Moon & Moon rotated
+#                   Moons
 # ============================================================================
 
 
@@ -48,6 +48,9 @@ def load_moons(noise=0.05, n_samples=500, batchsize=32):
                     }
     return source_data
 
+# ============================================================================
+#                   Moons
+# ============================================================================
 
 def load_clouds(n_samples=50 ,n_classes=2, batchsize=5):
     """
@@ -98,6 +101,3 @@ def load_clouds(n_samples=50 ,n_classes=2, batchsize=5):
                     }
     return source_data
 
-
-if __name__ == '__main__':
-    load_moon()

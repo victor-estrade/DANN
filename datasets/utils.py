@@ -81,11 +81,3 @@ def make_corrector_dataset(source_data, target_data):
         })
     return corrector_data
 
-if __name__ == '__main__':
-    a = np.arange(20).reshape(-1, 2)
-    b = np.arange(20).reshape(-1, 2)
-    c = np.arange(20).reshape(-1, 2)
-
-    print(*shuffle_array(a))
-    print(*shuffle_array(a, b))
-    print(*shuffle_array(a, b, c))

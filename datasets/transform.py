@@ -11,7 +11,7 @@ np.random.seed(12345)
 #                   Matrix products
 # ============================================================================
 
-def diag_dominant_matrix(size, safe=False):
+def _diag_dominant_matrix(size, safe=False):
     """
     https://matthewhr.wordpress.com/2013/09/01/how-to-construct-an-invertible-matrix-just-choose-large-diagonals/
     """
@@ -53,7 +53,7 @@ def diag_dataset(source_data, normalize=False):
     y_t_val = y_val
     y_t_test = y_test
 
-    A = diag_dominant_matrix(size)
+    A = _diag_dominant_matrix(size)
     if normalize:
         normalizer = Normalizer()
         X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
@@ -133,7 +133,7 @@ def random_mat_dataset(source_data, normalize=False):
 #                   Rotations
 # ============================================================================
 
-def rotate_data(X, angle=35.):
+def _rotate_data(X, angle=35.):
     """Apply a rotation on a 2D dataset.
     """
     theta = (angle/180.) * np.pi
@@ -171,11 +171,11 @@ def rotate_dataset(source_data, angle=35.):
     batchsize = source_data['batchsize']
 
     target_data = {
-                'X_train': rotate_data(X_train, angle=angle),
+                'X_train': _rotate_data(X_train, angle=angle),
                 'y_train': y_train,
-                'X_val': rotate_data(X_val, angle=angle),
+                'X_val': _rotate_data(X_val, angle=angle),
                 'y_val': y_val,
-                'X_test': rotate_data(X_test, angle=angle),
+                'X_test': _rotate_data(X_test, angle=angle),
                 'y_test': y_test,
                 'batchsize': batchsize,
                 }

@@ -120,17 +120,3 @@ def load_mnist(batchsize=500, shape=(-1, 28, 28)):
                     'batchsize': batchsize,
                     }
     return source_data
-
-
-if __name__ == '__main__':
-    print('I am at your service, master.')
-    # source, target, domain = load_mnistM()
-    # source, target, domain = load_mnist_invert(roll=False)
-    source = load_mnist()
-    X_S, y_S = source['X_train'], source['y_train']
-    np.random.seed(None)
-    i = np.random.randint(X_S.shape[0])
-
-    plt.imshow(X_S[i])
-    plt.title('AVANT-label='+str(y_S[i]))
-    plt.show()
