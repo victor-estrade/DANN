@@ -151,5 +151,3 @@ if __name__ == '__main__':
     logger.warn('warn message')
     logger.error('error message')
     logger.critical('critical message')
-
-    print(extract('log/test.log', r'training\sloss', r'\s*:\s'))
