@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf8
 from __future__ import division, print_function
 
 import re
@@ -6,9 +6,11 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.cm as cm
+color = cm.ScalarMappable(cmap='Paired')
 
 
-def plot_curve(stats, ax=None, label=None):
+def curve(stats, ax=None, label=None):
     """
     Plot the given stats curve.
     Useless function ?
@@ -22,7 +24,7 @@ def plot_curve(stats, ax=None, label=None):
     return fig, ax
 
 
-def plot_mat(mat, ax=None):
+def mat(mat, ax=None):
     """
     Plot the given matrix.
     Useless function ?
@@ -57,7 +59,7 @@ def add_legend(ax, xlabel='', ylabel='', title=''):
     ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
 
-def plot_img_samples(datasets, n_sample=4, cmap='Greys_r'):
+def img_samples(datasets, n_sample=4, cmap='Greys_r'):
     """
     Plot images randomly sampled from the test set of given datasets.
     The sampling respect alignment. If the i-th image is sample from the first
@@ -91,8 +93,7 @@ def plot_img_samples(datasets, n_sample=4, cmap='Greys_r'):
     return fig, fig.get_axes()
 
 
-
-def plot_learning_curve(stats, regex='acc', title=''):
+def learning_curve(stats, regex='acc', title=''):
     """
     Plot the statistics from the given stats dictionary that contains the regex.
 
@@ -115,7 +116,7 @@ def plot_learning_curve(stats, regex='acc', title=''):
     return fig, ax
 
 
-def plot_bound(X, y, predict_fn, ax=None):
+def bound(X, y, predict_fn, ax=None):
     """
     Plot the bounds of a 2D dataset (X,y) given a probability prediction
     function.
@@ -132,6 +133,9 @@ def plot_bound(X, y, predict_fn, ax=None):
         ax: the axes
     """
     from matplotlib.colors import ListedColormap
+    cm = plt.cm.RdBu
+    cm_bright = ListedColormap(['#FF0000', '#0000FF', '#00FF00'])
+    
     if ax is None:
         fig, ax = plt.subplots()
     else:
@@ -144,12 +148,142 @@ def plot_bound(X, y, predict_fn, ax=None):
     Z = np.array(Z)[0, :, 1]
     # Put the result into a color plot
     Z = Z.reshape(xx.shape)
-    cm = plt.cm.RdBu
-    cm_bright = ListedColormap(['#FF0000', '#0000FF', '#00FF00'])
     ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
 
     # Plot also the training points
     ax.scatter(X[:, 0], X[:, 1], c=y, cmap=cm_bright)
     ax.xlim(xx.min(), xx.max())
     ax.ylim(yy.min(), yy.max())
+    return fig, ax
+
+
+def source_2D(X, y, ax=None):
+    """
+    Plot 2D data with the source color and shape settings
+    
+    Params
+    ------
+        X: the 2D data (numpy 2d-array)
+        y: the labels of the data
+        ax: (default=None)
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    y = y / np.linalg.norm(y)
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, c=color.to_rgba(y))
+    return fig, ax
+
+
+def target_2D(X, y, ax=None):
+    """
+    Plot 2D data with the target color and shape settings
+    
+    Params
+    ------
+        X: the 2D data (numpy 2d-array)
+        y: the labels of the data
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    y = y / np.linalg.norm(y)
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='v', s=80, c=color.to_rgba(y))
+    return fig, ax
+
+
+def corrected_2D(X, y, ax=None):
+    """
+    Plot 2D data with the corrected color and shape settings
+    
+    Params
+    ------
+        X: the 2D data (numpy 2d-array)
+        y: the labels of the data
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    y = y / np.linalg.norm(y)
+    ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='*', s=80, c=color.to_rgba(y))
+    return fig, ax
+
+
+def centers_source(C, ax=None):
+    """
+    Plot 2D data centers with the source color and shape settings
+    
+    Params
+    ------
+        C: the 2D data (numpy 2d-array)
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    ax.scatter(C[:, 0], C[:, 1], label='source centers', marker='D', s=100, 
+               edgecolors='purple', facecolors='purple')
+    return fig, ax
+
+
+def centers_target(C, ax=None):
+    """
+    Plot 2D data centers with the target color and shape settings
+    
+    Params
+    ------
+        C: the 2D data (numpy 2d-array)
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    ax.scatter(C[:, 0], C[:, 1], label='target centers', marker='D', s=100, 
+               edgecolors='yellow', facecolors='yellow')
+    return fig, ax
+
+
+def centers_corrected(C, ax=None):
+    """
+    Plot 2D data centers with the corrected color and shape settings
+    
+    Params
+    ------
+        C: the 2D data (numpy 2d-array)
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    ax.scatter(C[:, 0], C[:, 1], label='corrected centers', marker='D', s=100, 
+               edgecolors='green', facecolors='green')
+    return fig, ax
+
+
+def mapping(X, Y, ax=None):
+    """
+    Plot 2D data points mapping.
+    
+    Params
+    ------
+        X: the 2D data (numpy 2d-array), origin of the arrows
+        Y: the 2D data (numpy 2d-array), target of the arrows
+        ax: (default=None) the axes
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    # Plot clusters mapping to clusters (green)
+    ax.quiver(X[:,0],X[:,1],
+              Y[:,0]-X[:,0], Y[:,1]-X[:,1],
+              scale_units='xy', angles='xy', scale=1, facecolors='g')
     return fig, ax
