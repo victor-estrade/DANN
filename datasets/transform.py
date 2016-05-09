@@ -133,14 +133,21 @@ def random_mat_dataset(source_data, normalize=False):
 #                   Rotations
 # ============================================================================
 
+def _rot_mat(angle):
+    theta = (angle/180.) * np.pi
+    rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
+                             [np.sin(theta),  np.cos(theta)]])
+    return rot_matrix
+
+ 
 def _rotate_data(X, angle=35.):
     """Apply a rotation on a 2D dataset.
     """
     theta = (angle/180.) * np.pi
-    rotMatrix = np.array([[np.cos(theta), -np.sin(theta)], 
+    rot_matrix = np.array([[np.cos(theta), -np.sin(theta)], 
                              [np.sin(theta),  np.cos(theta)]])
     X_r = np.empty_like(X)
-    X_r[:] = X[:].dot(rotMatrix)
+    X_r[:] = X[:].dot(rot_matrix)
     return X_r
 
 
