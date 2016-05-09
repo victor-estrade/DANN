@@ -24,7 +24,7 @@ def shuffle_array(*args):
     """
     # Assert that there is at least one array
     if len(args) == 0:
-        raise ValueError('shuffle must take at least one array')
+        raise ValueError('shuffle_array() must take at least one argument')
     length = args[0].shape[0]
     # Assert that every array have the same 1st dimension length:
     for i, arr in enumerate(args):
@@ -135,7 +135,7 @@ def kclosest(X, Y, k, batchsize=None):
     return kbest
 
 
-def clostest_map(X, Y, y, k=20, batchsize=None):
+def clostest_map(X, Y, y, k=20, batchsize=None, shuffle=False):
     """
     Get the k-closest between X and Y restricted to the points 
     that have the same label in y.
@@ -153,6 +153,11 @@ def clostest_map(X, Y, y, k=20, batchsize=None):
 
         # Get the k-closest index from the small part with the same labels
         idx_label2 = kclosest(X[idx_label], Y[idx_label], k, batchsize=batchsize)
+
+        # Then we shuffle the arrays to prevent deterministic 
+        # problems in the choose of the nearest point
+        if shuffle:
+            idx_label, idx_label2 = shuffle_array(idx_label, idx_label2)
         
         for i1, i2 in zip(idx_label, idx_label2):
             # i2 is an index array of shape (k,) with the sorted closest example index 
@@ -230,11 +235,7 @@ def cluster_preprocess(data, trainer, epoch, *args, **kwargs):
     X_trg = data['y_train_centers']
     labels = data['centers_labels']
     
-    # Then we shuffle the arrays to prevent deterministic 
-    # problem in the choose of the nearest cluster
-    X_out, X_trg, labels = shuffle_array(X_out, X_trg, labels)
     idx = clostest_map(X_out, X_trg, labels, k=k, batchsize=None)
-
     # idx takes the indexes to relabel the closest clusters
     # [2, 0, 1, 3]  means  0<-2, 1<-0, 2<-1, 3<-3
     data['X_train_closest_cluster'] = idx[data['X_train_clusters'][:]]
