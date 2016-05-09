@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 import numpy as np
-from utils import shuffle_array
+from datasets.utils import shuffle_array
 from sklearn.datasets import make_moons
 
 # ============================================================================

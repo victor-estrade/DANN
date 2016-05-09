@@ -6,7 +6,10 @@ import sys
 import os
 
 import numpy as np
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import matplotlib.pyplot as plt
 
 np.random.seed(12345)
