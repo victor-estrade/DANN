@@ -88,8 +88,7 @@ Y = T.fmatrix('Y')
 translation_vectors = X.reshape((X.shape[0], 1, -1)) - Y.reshape((1, Y.shape[0], -1))
 euclidiean_distances = (translation_vectors ** 2).sum(2)
 _euclidean_distance = theano.function([X, Y], euclidiean_distances, allow_input_downcast=True)
-_euclidean_distance.__doc__=\
-"""
+_euclidean_distance.__doc__="""
     Computes the distances between all pairs of row vectors in X and Y, the given matrices.
     Use GPU.
     Params
@@ -145,6 +144,9 @@ def clostest_map(X, Y, y, k=20, batchsize=None, shuffle=False):
 
     return the map as an index array to realign the X array.
     """
+    assert X.shape[0] == Y.shape[0] == y.shape[0], \
+        "The given datas and labels should have the same number of examples"\
+        "(X {} == Y {} == y {})".format(X.shape[0], Y.shape[0], y.shape[0])
     counter = np.zeros(X.shape[0], dtype=int)
     idx = np.empty_like(y, dtype=int)
     for label in np.unique(y):
