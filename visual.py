@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.cm as cm
-color = cm.ScalarMappable(cmap='Paired')
+color = cm.ScalarMappable(cmap='Set1')
 
 
 def curve(stats, ax=None, label=None):
@@ -171,7 +171,7 @@ def source_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
-    y = y / np.linalg.norm(y)
+    # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, c=color.to_rgba(y))
     return fig, ax
 
@@ -190,7 +190,7 @@ def target_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
-    y = y / np.linalg.norm(y)
+    # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='target', marker='v', s=80, c=color.to_rgba(y))
     return fig, ax
 
@@ -209,7 +209,7 @@ def corrected_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
-    y = y / np.linalg.norm(y)
+    # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='*', s=80, c=color.to_rgba(y))
     return fig, ax
 
@@ -286,4 +286,48 @@ def mapping(X, Y, ax=None):
     ax.quiver(X[:,0],X[:,1],
               Y[:,0]-X[:,0], Y[:,1]-X[:,1],
               scale_units='xy', angles='xy', scale=1, facecolors='g')
+    return fig, ax
+
+
+def tsne(X, Y, y, ax=None, n_sample=100):
+    """
+    Plot data comparison throught a TSNE
+    
+    Params
+    ------
+        X: the 'source' data (numpy 2d-array)
+        Y: the 'target' data (numpy 2d-array)
+        y: the labels of both data
+        ax: (default=None)
+        n_sample: (default=100) int or float.
+    """
+    from sklearn.manifold import TSNE
+    
+    assert X.shape[0] == Y.shape[0] == y.shape[0], "Data should have the same number of sample"
+    n = X.shape[0]
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = ax.get_figure()
+    
+    if n_sample <= 0 or n_sample >= n:
+        n_sample = n
+    else:
+        if 0 < n_sample < 1:
+            n_sample = int(n_sample * n)
+        else:
+            n_sample = int(n_sample)
+        idx = np.random.choice(X.shape[0], size=n_sample, replace=False)
+        X = X[idx]
+        y_X = y[idx]
+        idx = np.random.choice(X.shape[0], size=n_sample, replace=False)
+        Y = Y[idx]
+        y_Y = y[idx]
+    D = np.vstack((X, Y))
+    ts = TSNE()
+    Z = ts.fit_transform(D)
+    n = X.shape[0]
+    source_2D(Z[:n], y_X, ax=ax)
+    target_2D(Z[n:], y_Y, ax=ax)
+    fig.suptitle('TSNE Visualisation')
     return fig, ax
