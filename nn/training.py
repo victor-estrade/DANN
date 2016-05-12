@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-from logs import log_fname, new_logger
+from logs import log_fname, new_logger, empty_logger
 from utils import iterate_minibatches
 
 
@@ -40,7 +40,7 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
         stats: dict with stats
     """
     if logger is None:
-        logger = new_logger()
+        logger = empty_logger()
 
     logger.info("Starting training...")
     final_stats = {}
