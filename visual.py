@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.cm as cm
 color = cm.ScalarMappable(cmap='Set1')
+# color = cm.ScalarMappable(cmap='Paired')
 
 
 def curve(stats, ax=None, label=None):
@@ -56,10 +57,10 @@ def add_legend(ax, xlabel='', ylabel='', title=''):
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles, labels, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    ax.legend(handles, labels, bbox_to_anchor=(1., 1), loc=2, borderaxespad=0.)
 
 
-def img_samples(datasets, n_sample=4, cmap='Greys_r'):
+def img_samples(datasets, n_sample=4, cmap='Greys_r', random_state=None):
     """
     Plot images randomly sampled from the test set of given datasets.
     The sampling respect alignment. If the i-th image is sample from the first
@@ -80,9 +81,9 @@ def img_samples(datasets, n_sample=4, cmap='Greys_r'):
     n_datasets = len(datasets)
     # Plot some sample images:
     fig = plt.figure()
-    rand = np.random.RandomState()
+    rand = np.random.RandomState(random_state)
     for n in range(n_sample):
-        i = rand.randint(source_data['X_test'].shape[0])
+        i = rand.randint(datasets[0]['X_test'].shape[0])
         for j, data in enumerate(datasets):
             sample = data['X_test'][i]
             ax = fig.add_subplot(n_sample, n_datasets, n*n_datasets+1+j)
@@ -132,9 +133,7 @@ def bound(X, y, predict_fn, ax=None):
         fig: the figure
         ax: the axes
     """
-    from matplotlib.colors import ListedColormap
-    cm = plt.cm.RdBu
-    cm_bright = ListedColormap(['#FF0000', '#0000FF', '#00FF00'])
+    cm_heat = plt.cm.RdBu
     
     if ax is None:
         fig, ax = plt.subplots()
@@ -148,14 +147,17 @@ def bound(X, y, predict_fn, ax=None):
     Z = np.array(Z)[0, :, 1]
     # Put the result into a color plot
     Z = Z.reshape(xx.shape)
-    ax.contourf(xx, yy, Z, cmap=cm, alpha=.8)
+    ax.contourf(xx, yy, Z, cmap=cm_heat, alpha=.8)
 
     # Plot also the training points
-    ax.scatter(X[:, 0], X[:, 1], c=y, cmap=cm_bright)
+    ax.scatter(X[:, 0], X[:, 1], c=y, cmap=color)
     ax.xlim(xx.min(), xx.max())
     ax.ylim(yy.min(), yy.max())
     return fig, ax
 
+# ============================================================================
+#                   Data
+# ============================================================================
 
 def source_2D(X, y, ax=None):
     """
@@ -213,6 +215,9 @@ def corrected_2D(X, y, ax=None):
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='*', s=80, c=color.to_rgba(y))
     return fig, ax
 
+# ============================================================================
+#                   Clusters
+# ============================================================================
 
 def centers_source(C, ax=None):
     """
@@ -230,6 +235,7 @@ def centers_source(C, ax=None):
     ax.scatter(C[:, 0], C[:, 1], label='source centers', marker='D', s=100, 
                edgecolors='purple', facecolors='purple')
     return fig, ax
+
 
 
 def centers_target(C, ax=None):
@@ -288,6 +294,9 @@ def mapping(X, Y, ax=None):
               scale_units='xy', angles='xy', scale=1, facecolors='g')
     return fig, ax
 
+# ============================================================================
+#                   Dimension reductions
+# ============================================================================
 
 def tsne(X, Y, y, ax=None, n_sample=100):
     """
@@ -305,6 +314,7 @@ def tsne(X, Y, y, ax=None, n_sample=100):
     
     assert X.shape[0] == Y.shape[0] == y.shape[0], "Data should have the same number of sample"
     n = X.shape[0]
+
     if ax is None:
         fig, ax = plt.subplots()
     else:
@@ -317,17 +327,18 @@ def tsne(X, Y, y, ax=None, n_sample=100):
             n_sample = int(n_sample * n)
         else:
             n_sample = int(n_sample)
-        idx = np.random.choice(X.shape[0], size=n_sample, replace=False)
+        idx = np.random.choice(n, size=n_sample, replace=False)
         X = X[idx]
         y_X = y[idx]
-        idx = np.random.choice(X.shape[0], size=n_sample, replace=False)
+        idx = np.random.choice(n, size=n_sample, replace=False)
         Y = Y[idx]
         y_Y = y[idx]
     D = np.vstack((X, Y))
     ts = TSNE()
     Z = ts.fit_transform(D)
     n = X.shape[0]
-    source_2D(Z[:n], y_X, ax=ax)
-    target_2D(Z[n:], y_Y, ax=ax)
-    fig.suptitle('TSNE Visualisation')
+    ax.scatter(Z[:n, 0], Z[:n, 1], label='X', marker='o', s=80, c=color.to_rgba(y_X))
+    ax.scatter(Z[n:, 0], Z[n:, 1], label='Y', marker='*', s=80, c=color.to_rgba(y_Y))
+    
     return fig, ax
+
