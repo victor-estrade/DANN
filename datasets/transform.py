@@ -24,7 +24,7 @@ def _diag_dominant_matrix(size, safe=False):
     return matrix
 
 
-def diag_dataset(source_data, normalize=False):
+def diag(source_data, normalize=False):
     """
     Transform the given dataset by applying a diagonal dominant matrix to it.
 
@@ -76,7 +76,7 @@ def diag_dataset(source_data, normalize=False):
     return target_data
 
 
-def random_mat_dataset(source_data, normalize=False, random_state=None):
+def random_mat(source_data, normalize=False, random_state=None):
     """
     Transform the given dataset by applying a random matrix to it.
 
@@ -151,7 +151,7 @@ def _rotate_data(X, angle=35.):
     return X_r
 
 
-def rotate_dataset(source_data, angle=35.):
+def rotate(source_data, angle=35.):
     """
     Transform the given dataset by applying a rotation to it.
 
@@ -194,7 +194,7 @@ def rotate_dataset(source_data, angle=35.):
 #                   Invertions
 # ============================================================================
 
-def invert_dataset(source_data, pivot=1):
+def invert(source_data, pivot=1):
     """
     Transform the given dataset by applying a simple operation to it.
 
@@ -235,7 +235,7 @@ def invert_dataset(source_data, pivot=1):
 #                   Permutations
 # ============================================================================
 
-def mirror_dataset(source_data, shape=(-1,28,28)):
+def mirror(source_data, shape=(-1,28,28)):
     """
     Transform the given dataset by applying a simple operation to it.
 
@@ -274,7 +274,7 @@ def mirror_dataset(source_data, shape=(-1,28,28)):
     return target_data
 
 
-def random_permut_dataset(source_data, random_state=None):
+def random_permut(source_data, random_state=None):
     """
     Transform the given dataset by applying a simple operation to it.
 
