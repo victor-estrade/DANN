@@ -4,10 +4,10 @@ import numpy as np
 from datasets.utils import shuffle_array
 from sklearn.datasets import make_moons
 
+
 # ============================================================================
 #                   Moons
 # ============================================================================
-
 
 def load_moons(noise=0.05, n_samples=500, batchsize=32):
     """
@@ -177,7 +177,7 @@ def load_circles(n_samples=50 ,n_classes=5, batchsize=20):
         arr = np.random.normal(0, 1/n_classes, size=(n_samples, 2))
         rho = np.sqrt(arr[:, 0]**2 + arr[:, 0]**2)
         phi = np.arctan2(arr[:, 1], arr[:, 0])
-        rho = (p+1)/(1+np.exp(rho))
+        rho = (p+1)/(1+np.exp(rho))/n_classes
         arr[:, 0] = rho * np.cos(phi)
         arr[:, 1] = rho * np.sin(phi)
         return arr

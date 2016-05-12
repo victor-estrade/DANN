@@ -76,7 +76,7 @@ def diag_dataset(source_data, normalize=False):
     return target_data
 
 
-def random_mat_dataset(source_data, normalize=False):
+def random_mat_dataset(source_data, normalize=False, random_state=None):
     """
     Transform the given dataset by applying a random matrix to it.
 
@@ -105,7 +105,8 @@ def random_mat_dataset(source_data, normalize=False):
     y_t_val = y_val
     y_t_test = y_test
 
-    A = np.random.random((size, size))
+    rand_state = np.random.RandomState(random_state)
+    A = rand_state.random((size, size))
     if normalize:
         normalizer = Normalizer()
         X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
@@ -272,3 +273,55 @@ def mirror_dataset(source_data, shape=(-1,28,28)):
 
     return target_data
 
+
+def random_permut_dataset(source_data, random_state=None):
+    """
+    Transform the given dataset by applying a simple operation to it.
+
+    target_data <- random_permutation of feature(source_data)
+
+    Params
+    ------
+        source_data: a dataset (dict with the separated data)
+
+    Return
+    ------
+        target_data: dict with the separated transformed data
+
+    """
+
+    X_train = np.copy(source_data['X_train'])
+    y_train = source_data['y_train']
+    X_val = np.copy(source_data['X_val'])
+    y_val = source_data['y_val']
+    X_test = np.copy(source_data['X_test'])
+    y_test = source_data['y_test']
+    batchsize = source_data['batchsize']
+
+    # Take care of 3D or n-D data
+    rand_state = np.random.RandomState(random_state)
+    permutation = rand_state.permutation(np.prod(X_train.shape[1:]))
+    
+    shape = X_train.shape
+    X_train = X_train.reshape(-1, np.prod(shape[1:]))
+    X_train = X_train[:, permutation].reshape(shape)
+
+    shape = X_val.shape
+    X_val = X_val.reshape(-1, np.prod(shape[1:]))
+    X_val = X_val[:, permutation].reshape(shape)
+
+    shape = X_test.shape
+    X_test = X_test.reshape(-1, np.prod(shape[1:]))
+    X_test = X_test[:, permutation].reshape(shape)
+
+    target_data = {
+                'X_train': X_train,
+                'y_train': y_train,
+                'X_val': X_val,
+                'y_val': y_val,
+                'X_test': X_test,
+                'y_test': y_test,
+                'batchsize': batchsize,
+                }
+
+    return target_data

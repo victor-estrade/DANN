@@ -52,7 +52,7 @@ def make_domain_dataset(datasets):
             'y_train': None,
             'y_val': None,
             'y_test': None,
-            'batchsize': data['batchsize'],
+            'batchsize': datasets[0]['batchsize'],
             }
 
     return domain_data
