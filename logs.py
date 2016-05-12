@@ -9,6 +9,14 @@ import re
 
 __author__ = 'Estrade Victor'
 
+def empty_logger():
+    """
+    Empty the logger
+    """
+    logger = logging.getLogger('empty')
+    logger.handlers = []
+    return logger
+
 def new_logger(fname=None, name=None):
     """
     Build and return a new logger that will write its logs into the console
