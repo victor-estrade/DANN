@@ -24,7 +24,7 @@ def _diag_dominant_matrix(size, safe=False):
     return matrix
 
 
-def diag(source_data, normalize=False):
+def diag_dominant(source_data, normalize=False):
     """
     Transform the given dataset by applying a diagonal dominant matrix to it.
 
@@ -106,7 +106,7 @@ def random_mat(source_data, normalize=False, random_state=None):
     y_t_test = y_test
 
     rand_state = np.random.RandomState(random_state)
-    A = rand_state.random((size, size))
+    A = rand_state.rand(size, size)
     if normalize:
         normalizer = Normalizer()
         X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
@@ -325,3 +325,44 @@ def random_permut(source_data, random_state=None):
                 }
 
     return target_data
+
+# ============================================================================
+#                   Apply a given function
+# ============================================================================
+
+def apply_fun(source_data, fun):
+    """
+    Transform the given dataset by applying an operation to it.
+
+    target_data <- fun(source_data)
+
+    Params
+    ------
+        source_data: a dataset (dict with the separated data)
+
+    Return
+    ------
+        target_data: dict with the separated transformed data
+
+    """
+
+    X_train = np.copy(source_data['X_train'])
+    y_train = source_data['y_train']
+    X_val = np.copy(source_data['X_val'])
+    y_val = source_data['y_val']
+    X_test = np.copy(source_data['X_test'])
+    y_test = source_data['y_test']
+    batchsize = source_data['batchsize']
+
+    target_data = {
+                'X_train': fun(X_train),
+                'y_train': y_train,
+                'X_val': fun(X_val),
+                'y_val': y_val,
+                'X_test': fun(X_test),
+                'y_test': y_test,
+                'batchsize': batchsize,
+                }
+
+    return target_data
+
