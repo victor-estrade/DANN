@@ -45,13 +45,21 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
     logger.info("Starting training...")
     final_stats = {}
     final_stats.update({trainer.name+' training loss': [] for trainer in trainers})
-    final_stats.update({trainer.name+' training acc': [] for trainer in trainers})
     final_stats.update({trainer.name+' valid loss': [] for trainer in trainers})
-    final_stats.update({trainer.name+' valid acc': [] for trainer in trainers})
     final_stats.update({tester.name+' valid loss': [] for tester in testers})
-    final_stats.update({tester.name+' valid acc': [] for tester in testers})
 
-    
+    final_stats.update({(trainer.name+str(i)+' training acc' if trainer.train.n_returned_outputs > 2
+                            else trainer.name+' training acc'): []
+        for trainer in trainers for i in range(trainer.train.n_returned_outputs-1)})
+    final_stats.update({(trainer.name+str(i)+' valid acc' if trainer.train.n_returned_outputs > 2
+                            else trainer.name+' valid acc'): []
+        for trainer in trainers for i in range(trainer.train.n_returned_outputs-1)})
+    final_stats.update({(tester.name+str(i)+' valid acc' if tester.train.n_returned_outputs > 2
+                            else tester.name+' valid acc'): []
+        for tester in testers for i in range(tester.train.n_returned_outputs-1)})
+    # final_stats.update({trainer.name+' valid acc': [] for trainer in trainers})
+    # final_stats.update({tester.name+' valid acc': [] for tester in testers})
+
     for epoch in range(num_epochs):
         # Prepare the statistics
         start_time = time.time()
@@ -68,10 +76,17 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
         for minibatches in zip(*batches):
             for batch, trainer in zip(minibatches, trainers):
                 # X, y = batch
-                loss, acc = trainer.train(*batch)
+                res = trainer.train(*batch)
+                loss, acc = res.pop(0), res
+                # The first should be the loss
                 stats[trainer.name+' training loss'].append(loss)
-                stats[trainer.name+' training acc'].append(acc*100)
-        
+                # If we are in a normal case, res is only one accuracy
+                if len(acc) == 1:
+                    stats[trainer.name+' training acc'].append(acc*100)
+                else: # Else we have multiple accuracies
+                    for i, a in enumerate(acc):
+                        stats[trainer.name+str(i)+' training acc'].append(a*100)
+
         # Validation (forward propagation)
         # done with the iterative functions
         batches = tuple(iterate_minibatches(data['X_val'], data['y_val'], data['batchsize']) 
@@ -79,9 +94,16 @@ def training(trainers, train_data, testers=[], test_data=[], num_epochs=20, logg
         for minibatches in zip(*batches):
             for batch, valider in zip(minibatches, trainers+testers):
                 # X, y = batch
-                loss, acc = valider.valid(*batch)
+                res = valider.valid(*batch)
+                loss, acc = res.pop(0), res
+                # The first should be the loss
                 stats[valider.name+' valid loss'].append(loss)
-                stats[valider.name+' valid acc'].append(acc*100)
+                # If we are in a normal case, res is only one accuracy
+                if len(acc) == 1:
+                    stats[valider.name+' valid acc'].append(acc*100)
+                else: # Else we have multiple accuracies
+                    for i, a in enumerate(acc):
+                        stats[valider.name+str(i)+' valid acc'].append(a*100)
         
         logger.info("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - start_time))

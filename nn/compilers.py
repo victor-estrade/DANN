@@ -11,7 +11,8 @@ import theano.tensor as T
 from rgl import ReverseGradientLayer
 
 
-def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('target')): 
+def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('target'),
+                        regularization=None, reg_param=0.1): 
     """
     Stochastic Gradient Descent compiler with optionnal momentum.
 
@@ -22,11 +23,15 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('targe
         output_layer: the output layer from which the loss and updtaes will be computed
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
+        regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
+        reg_param: (default=0.1) the regularization hyper parameter: 
+                        loss = loss + reg_param * regularization
 
     Return
     ------
         A dictionnary with :
-            -train : function used to train the neural network
+            -train : function used to train the neural network (same as fit)
+            -fit : function used to train the neural network (same as train)
             -predict : function used to predict the label
             -valid : function used to get the accuracy and loss 
             -output : function used to get the output (exm: predict the label probabilities)
@@ -34,6 +39,7 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('targe
     Example:
     --------
     >>> funs = compiler_sgd_mom(output_layer, lr=0.01, mom=0.1)
+    >>> loss, acc = funs.train(X, y)
     
     """    
 
@@ -42,6 +48,13 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('targe
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
     loss = T.mean(lasagne.objectives.categorical_crossentropy(pred, target_var))
+    # Add a regularization term to the loss if needed
+    if regularization == 'l1':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l1)
+        loss += reg_param*reg
+    elif regularization == 'l2':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l2)
+        loss += reg_param*reg
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent and add a momentum to it.
@@ -74,13 +87,15 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('targe
 
     return {
             'train': train_function,
+            'fit': train_function,
             'predict': predict_function,
             'valid': valid_function,
             'output': output_function
            }
 
 
-def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('target')) : 
+def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('target'),
+                        regularization=None, reg_param=0.1): 
     """
     Stochastic Gradient Descent compiler with optionnal momentum.
 
@@ -91,11 +106,15 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
         output_layer: the output layer from which the loss and updtaes will be computed
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
+        regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
+        reg_param: (default=0.1) the regularization hyper parameter: 
+                        loss = loss + reg_param * regularization
 
     Return
     ------
         A dictionnary with :
-            -train : function used to train the neural network
+            -train : function used to train the neural network (same as fit)
+            -fit : function used to train the neural network (same as train)
             -predict : function used to predict the label
             -valid : function used to get the accuracy and loss 
             -output : function used to get the output (exm: predict the label probabilities)
@@ -104,13 +123,19 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
     --------
     >>> funs = squared_error_sgd_mom(output_layer, lr=0.01, mom=0.1)
     
-    """    
-
+    """
     input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
     loss = T.mean(lasagne.objectives.squared_error(pred, target_var))
+    # Add a regularization term to the loss if needed
+    if regularization == 'l1':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l1)
+        loss += reg_param*reg
+    elif regularization == 'l2':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l2)
+        loss += reg_param*reg
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent and add a momentum to it.
@@ -143,13 +168,15 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
     
     return {
             'train': train_function,
+            'fit': train_function,
             'predict': predict_function,
             'valid': valid_function,
             'output': output_function
            }
 
 
-def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
+def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
+                        regularization=None, reg_param=0.1): 
     """
     Stochastic Gradient Descent adversarial block compiler with optionnal momentum.
 
@@ -159,12 +186,16 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     ------
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
+        regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
+        reg_param: (default=0.1) the regularization hyper parameter: 
+                        loss = loss + reg_param * regularization
 
     Return
     ------
         compiler_function: a function that takes an output layer and return
             a dictionnary with :
-            -train : function used to train the neural network
+            -train : function used to train the neural network (same as fit)
+            -fit : function used to train the neural network (same as train)
             -predict : function used to predict the label
             -valid : function used to get the accuracy and loss 
             -output : function used to get the output (exm: predict the label probabilities)
@@ -191,6 +222,13 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
     loss = T.mean(lasagne.objectives.categorical_crossentropy(pred, true_domains))
+    # Add a regularization term to the loss if needed
+    if regularization == 'l1':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l1)
+        loss += reg_param*reg
+    elif regularization == 'l2':
+        reg = lasagne.regularization.regularize_network_params(output_layer, lasagne.regularization.l2)
+        loss += reg_param*reg
     # Create update expressions for training, i.e., how to modify the
     # parameters at each training step. Here, we'll use Stochastic Gradient
     # Descent and add a momentum to it.
@@ -199,10 +237,13 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     updates = lasagne.updates.apply_momentum(updates, params, momentum=mom)
 
     # As a bonus, also create an expression for the classification accuracy:
-    acc = T.mean(T.eq(T.argmax(pred, axis=1), true_domains))
+    n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in layers])
+    accs = [T.mean(T.eq(T.argmax(pred[n:m], axis=1), true_domains[n:m])) for n, m in zip(n_samples[:-1],n_samples[1:])]
+    # acc = T.mean(T.eq(T.argmax(pred, axis=1), true_domains))
+
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training loss:
-    train_function = theano.function(input_vars, [loss, acc], 
+    train_function = theano.function(input_vars, [loss,]+accs, 
         updates=updates, allow_input_downcast=True)
 
     # Create a loss expression for validation/testing. The crucial difference
@@ -213,9 +254,12 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
     # As a bonus, also create an expression for the classification:
     label = T.argmax(pred, axis=1)
     # As a bonus, also create an expression for the classification accuracy:
-    acc = T.mean(T.eq(label, true_domains))
+    # n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in layers])
+    accs = [T.mean(T.eq(T.argmax(pred[n:m], axis=1), true_domains[n:m])) for n, m in zip(n_samples[:-1],n_samples[1:])]
+    # acc = T.mean(T.eq(label, true_domains))
+
     # Compile a second function computing the validation loss and accuracy:
-    valid_function = theano.function(input_vars, [loss, acc], allow_input_downcast=True)
+    valid_function = theano.function(input_vars, [loss,]+accs, allow_input_downcast=True)
     # Compile a function computing the predicted labels:
     predict_function = theano.function(input_vars, [label], allow_input_downcast=True)
     # Compile an output function
@@ -223,6 +267,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9):
 
     funs = {
             'train': train_function,
+            'fit': train_function,
             'predict': predict_function,
             'valid': valid_function,
             'output': output_function
