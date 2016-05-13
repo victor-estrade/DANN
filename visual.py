@@ -7,8 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.cm as cm
-color = cm.ScalarMappable(cmap='Set1')
-# color = cm.ScalarMappable(cmap='Paired')
+
+CMAP = 'Paired'
+# CMAP = 'Set1'
 
 
 def curve(stats, ax=None, label=None):
@@ -105,16 +106,20 @@ def learning_curve(stats, regex='acc', title=''):
         title: (default='') the graph's title
     Return
     ------
-
+        fig: the figure (None if the regex match nothing)
+        ax: the axes (None if the regex match nothing)
     """
     keys = [k for k in stats.keys() if re.search(regex, k)]
-    fig, ax = plt.subplots()
-    for k in keys:  
-        # Plot learning accuracy curve
-        ax.plot(stats[k], label=k)
-    add_legend(ax, xlabel='epoch', ylabel='loss')
-    fig.suptitle(title)
-    return fig, ax
+    if keys:
+        fig, ax = plt.subplots()
+        for k in keys:  
+            # Plot learning accuracy curve
+            ax.plot(stats[k], label=k)
+        add_legend(ax, xlabel='epoch', ylabel=regex)
+        fig.suptitle(title)
+        return fig, ax
+    else:
+        return None, None
 
 
 def bound(X, y, predict_fn, ax=None):
@@ -134,6 +139,7 @@ def bound(X, y, predict_fn, ax=None):
         ax: the axes
     """
     cm_heat = plt.cm.RdBu
+    color = cm.ScalarMappable(cmap=CMAP)
     
     if ax is None:
         fig, ax = plt.subplots()
@@ -173,6 +179,7 @@ def source_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
+    color = cm.ScalarMappable(cmap=CMAP)
     # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, c=color.to_rgba(y))
     return fig, ax
@@ -192,6 +199,7 @@ def target_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
+    color = cm.ScalarMappable(cmap=CMAP)
     # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='target', marker='v', s=80, c=color.to_rgba(y))
     return fig, ax
@@ -211,6 +219,7 @@ def corrected_2D(X, y, ax=None):
         fig, ax = plt.subplots()
     else:
         fig = ax.get_figure()
+    color = cm.ScalarMappable(cmap=CMAP)
     # y = y / np.linalg.norm(y)
     ax.scatter(X[:, 0], X[:, 1], label='corrected', marker='*', s=80, c=color.to_rgba(y))
     return fig, ax
@@ -330,13 +339,13 @@ def tsne(X, Y, y, ax=None, n_sample=100):
         idx = np.random.choice(n, size=n_sample, replace=False)
         X = X[idx]
         y_X = y[idx]
-        idx = np.random.choice(n, size=n_sample, replace=False)
         Y = Y[idx]
         y_Y = y[idx]
     D = np.vstack((X, Y))
     ts = TSNE()
     Z = ts.fit_transform(D)
     n = X.shape[0]
+    color = cm.ScalarMappable(cmap=CMAP)
     ax.scatter(Z[:n, 0], Z[:n, 1], label='X', marker='o', s=80, c=color.to_rgba(y_X))
     ax.scatter(Z[n:, 0], Z[n:, 1], label='Y', marker='*', s=80, c=color.to_rgba(y_Y))
     
