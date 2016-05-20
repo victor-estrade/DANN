@@ -62,7 +62,7 @@ def diag_dominant(source_data, normalize=False):
         X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
         X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
         X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
-        
+
     target_data = {
                 'X_train': X_t_train,
                 'y_train': y_t_train,

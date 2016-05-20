@@ -80,7 +80,6 @@ def classwise_shuffle(data, trainer, epoch, *args, **kwargs):
 # ============================================================================
 
 
-
 # http://stackoverflow.com/questions/25886374/pdist-for-theano-tensor
 # Tested and approved
 X = T.fmatrix('X')

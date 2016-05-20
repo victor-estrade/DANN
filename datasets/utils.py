@@ -33,6 +33,33 @@ def shuffle_array(*args):
     return tuple(arr[indices] for arr in args)
 
 
+def make_dataset(X, y, batchsize):
+    """
+    Build a dictionnay dataset from the given arrays
+    60% : train
+    15% : validation
+    25% : test 
+    """
+    n_samples = X.shape[0]
+    n_train = int(0.6*n_samples)
+    n_val = int(0.15*n_samples)+n_train
+
+    X_train, X_val, X_test = X[0:n_train], X[n_train:n_val], X[n_val:]
+    y_train, y_val, y_test = y[0:n_train], y[n_train:n_val], y[n_val:]
+    
+    source_data = {
+                    'X_train': X_train,
+                    'y_train': y_train,
+                    'X_val': X_val,
+                    'y_val': y_val,
+                    'X_test': X_test,
+                    'y_test': y_test,
+                    'batchsize': batchsize,
+                    }
+    return source_data
+
+
+
 def make_domain_dataset(datasets):
     """
     Make a domain datasets out of the given datasets.

@@ -36,6 +36,18 @@ def mat(mat, ax=None):
     else:
         fig = ax.get_figure()
     sns.heatmap(mat, cmap=plt.cm.coolwarm, ax=ax)
+    ax.tick_params(
+                axis='x',          # changes apply to the x-axis
+                which='both',      # both major and minor ticks are affected
+                bottom='off',      # ticks along the bottom edge are off
+                top='off',         # ticks along the top edge are off
+                labelbottom='off') # labels along the bottom edge are off
+    ax.tick_params(
+                axis='y',          # changes apply to the y-axis
+                which='both',      # both major and minor ticks are affected
+                bottom='off',      # ticks along the bottom edge are off
+                top='off',         # ticks along the top edge are off
+                labelbottom='off') # labels along the bottom edge are off
     return fig, ax
 
 

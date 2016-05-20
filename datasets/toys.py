@@ -124,7 +124,7 @@ def load_X(n_samples=50 ,n_classes=5, batchsize=20):
     def plouf(n_samples, n_classes, p):
         arr = np.random.normal(0, 1/n_classes, size=(n_samples, 2))
         arr = arr+np.sign(arr)*p/n_classes
-    	return arr
+        return arr
 
     X_train = np.vstack([plouf(n_samples, n_classes, c) for c in range(n_classes)])
     y_train = np.hstack([np.ones(n_samples)*i for i in range(n_classes)])

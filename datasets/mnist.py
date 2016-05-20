@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division, print_function
 
@@ -82,11 +81,6 @@ def _load_mnist():
     # We just return all the arrays in order, as expected in main().
     # (It doesn't matter how we do this as long as we can read them again.)
     return (X_train, y_train), (X_val, y_val), (X_test, y_test)
-
-    f = gzip.open(os.path.join(data_dir, 'mnist.pkl.gz'), 'rb')
-    train_S, valid_S, test_S = pickle.load(f)
-    f.close()
-    return train_S, valid_S, test_S
 
 
 def load_mnist(batchsize=500, shape=(-1, 28, 28)):
