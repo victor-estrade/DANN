@@ -24,7 +24,7 @@ def _diag_dominant_matrix(size, safe=False):
     return matrix
 
 
-def diag_dominant(source_data, normalize=False):
+def diag_dominant(X, y, normalize=False):
     """
     Transform the given dataset by applying a diagonal dominant matrix to it.
 
@@ -39,44 +39,20 @@ def diag_dominant(source_data, normalize=False):
         target_data: dict with the separated transformed data
 
     """
-    X_train = source_data['X_train']
-    y_train = source_data['y_train']
-    X_val = source_data['X_val']
-    y_val = source_data['y_val']
-    X_test = source_data['X_test']
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-    size = np.prod(X_train.shape[1:])
-
-    y_t_train = y_train
-    y_t_val = y_val
-    y_t_test = y_test
-
+    size = np.prod(X.shape[1:])
+    y_t = np.copy(y)
+    
     A = _diag_dominant_matrix(size)
     if normalize:
         normalizer = Normalizer()
-        X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
-        X_t_val = normalizer.fit_transform(np.dot(X_val.reshape(-1, size), A)).reshape(X_val.shape)
-        X_t_test = normalizer.fit_transform(np.dot(X_test.reshape(-1, size), A)).reshape(X_test.shape)
+        X_t = normalizer.fit_transform(np.dot(X.reshape(-1, size), A)).reshape(X.shape)
     else:
-        X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
-        X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
-        X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
-
-    target_data = {
-                'X_train': X_t_train,
-                'y_train': y_t_train,
-                'X_val': X_t_val,
-                'y_val': y_t_val,
-                'X_test': X_t_test,
-                'y_test': y_t_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
+        X_t = np.dot(X.reshape(-1, size), A).reshape(X.shape)
+        
+    return X_t, y_t
 
 
-def random_mat(source_data, normalize=False, random_state=None):
+def random_mat(X, y, normalize=False, random_state=None):
     """
     Transform the given dataset by applying a random matrix to it.
 
@@ -92,42 +68,17 @@ def random_mat(source_data, normalize=False, random_state=None):
 
     """
 
-    X_train = source_data['X_train']
-    y_train = source_data['y_train']
-    X_val = source_data['X_val']
-    y_val = source_data['y_val']
-    X_test = source_data['X_test']
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-    size = np.prod(X_train.shape[1:])
-
-    y_t_train = y_train
-    y_t_val = y_val
-    y_t_test = y_test
+    size = np.prod(X.shape[1:])
+    y_t = np.copy(y)
 
     rand_state = np.random.RandomState(random_state)
     A = rand_state.rand(size, size)
     if normalize:
         normalizer = Normalizer()
-        X_t_train = normalizer.fit_transform(np.dot(X_train.reshape(-1, size), A)).reshape(X_train.shape)
-        X_t_val = normalizer.fit_transform(np.dot(X_val.reshape(-1, size), A)).reshape(X_val.shape)
-        X_t_test = normalizer.fit_transform(np.dot(X_test.reshape(-1, size), A)).reshape(X_test.shape)
+        X_t = normalizer.fit_transform(np.dot(X.reshape(-1, size), A)).reshape(X.shape)
     else:
-        X_t_train = np.dot(X_train.reshape(-1, size), A).reshape(X_train.shape)
-        X_t_val = np.dot(X_val.reshape(-1, size), A).reshape(X_val.shape)
-        X_t_test = np.dot(X_test.reshape(-1, size), A).reshape(X_test.shape)
-
-    target_data = {
-                'X_train': X_t_train,
-                'y_train': y_t_train,
-                'X_val': X_t_val,
-                'y_val': y_t_val,
-                'X_test': X_t_test,
-                'y_test': y_t_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
+        X_t = np.dot(X.reshape(-1, size), A).reshape(X.shape)
+    return X_t, y_t
 
 # ============================================================================
 #                   Rotations
@@ -151,7 +102,7 @@ def _rotate_data(X, angle=35.):
     return X_r
 
 
-def rotate(source_data, angle=35.):
+def rotate(X, y, angle=35.):
     """
     Transform the given dataset by applying a rotation to it.
 
@@ -169,32 +120,16 @@ def rotate(source_data, angle=35.):
 
     """
 
-    X_train = source_data['X_train']
-    y_train = source_data['y_train']
-    X_val = source_data['X_val']
-    y_val = source_data['y_val']
-    X_test = source_data['X_test']
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-
-    target_data = {
-                'X_train': _rotate_data(X_train, angle=angle),
-                'y_train': y_train,
-                'X_val': _rotate_data(X_val, angle=angle),
-                'y_val': y_val,
-                'X_test': _rotate_data(X_test, angle=angle),
-                'y_test': y_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
+    y_t = np.copy(y)
+    X_t =  _rotate_data(X, angle=angle)
+    return X_t, y_t
 
 
 # ============================================================================
 #                   Invertions
 # ============================================================================
 
-def invert(source_data, pivot=1):
+def invert(X, y, pivot=1):
     """
     Transform the given dataset by applying a simple operation to it.
 
@@ -209,33 +144,16 @@ def invert(source_data, pivot=1):
         target_data: dict with the separated transformed data
 
     """
+    y_t = np.copy(y)
+    X_t = pivot - X
+    return X_t, y_t
 
-    X_train = source_data['X_train']
-    y_train = source_data['y_train']
-    X_val = source_data['X_val']
-    y_val = source_data['y_val']
-    X_test = source_data['X_test']
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-    size = np.prod(X_train.shape[1:])
-
-    target_data = {
-                'X_train': (pivot-X_train),
-                'y_train': y_train,
-                'X_val': (pivot-X_val),
-                'y_val': y_val,
-                'X_test': (pivot-X_test),
-                'y_test': y_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
-
+    
 # ============================================================================
 #                   Permutations
 # ============================================================================
 
-def mirror(source_data, shape=(-1,28,28)):
+def mirror(X, y, shape=(-1,28,28)):
     """
     Transform the given dataset by applying a simple operation to it.
 
@@ -253,28 +171,12 @@ def mirror(source_data, shape=(-1,28,28)):
 
     """
 
-    X_train = source_data['X_train']
-    y_train = source_data['y_train']
-    X_val = source_data['X_val']
-    y_val = source_data['y_val']
-    X_test = source_data['X_test']
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-
-    target_data = {
-                'X_train': np.fliplr(X_train.reshape(shape)),
-                'y_train': y_train,
-                'X_val': np.fliplr(X_val.reshape(shape)),
-                'y_val': y_val,
-                'X_test': np.fliplr(X_test.reshape(shape)),
-                'y_test': y_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
+    X_t =  np.fliplr(np.copy(X).reshape(shape))
+    y_t = np.copy(y)
+    return X_t, y_t
 
 
-def random_permut(source_data, random_state=None):
+def random_permut(X, y, random_state=None):
     """
     Transform the given dataset by applying a simple operation to it.
 
@@ -289,42 +191,18 @@ def random_permut(source_data, random_state=None):
         target_data: dict with the separated transformed data
 
     """
+    y_t = np.copy(y)
 
-    X_train = np.copy(source_data['X_train'])
-    y_train = source_data['y_train']
-    X_val = np.copy(source_data['X_val'])
-    y_val = source_data['y_val']
-    X_test = np.copy(source_data['X_test'])
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
-
+    X_t = np.copy(X)
     # Take care of 3D or n-D data
     rand_state = np.random.RandomState(random_state)
-    permutation = rand_state.permutation(np.prod(X_train.shape[1:]))
+    permutation = rand_state.permutation(np.prod(X_t.shape[1:]))
     
-    shape = X_train.shape
-    X_train = X_train.reshape(-1, np.prod(shape[1:]))
-    X_train = X_train[:, permutation].reshape(shape)
+    shape = X_t.shape
+    X_t = X_t.reshape(-1, np.prod(shape[1:]))
+    X_t = X_t[:, permutation].reshape(shape)
+    return X_t, y_t
 
-    shape = X_val.shape
-    X_val = X_val.reshape(-1, np.prod(shape[1:]))
-    X_val = X_val[:, permutation].reshape(shape)
-
-    shape = X_test.shape
-    X_test = X_test.reshape(-1, np.prod(shape[1:]))
-    X_test = X_test[:, permutation].reshape(shape)
-
-    target_data = {
-                'X_train': X_train,
-                'y_train': y_train,
-                'X_val': X_val,
-                'y_val': y_val,
-                'X_test': X_test,
-                'y_test': y_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
 
 # ============================================================================
 #                   Apply a given function
