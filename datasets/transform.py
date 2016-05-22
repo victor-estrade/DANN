@@ -158,7 +158,7 @@ def rotate(source_data, angle=35.):
     target_data <- source_data . Rotation_Matrix
 
     Can be used only on 2D datasets !
-    
+
     Params
     ------
         source_data: a dataset (dict with the separated data)

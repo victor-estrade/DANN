@@ -29,7 +29,7 @@ def _load_mnist():
 
     Return
     ------
-        train, valid, test: the datasets, couples of numpy arrays (X, y). 
+        train, test: the datasets, couples of numpy arrays (X, y). 
     """
     # We first define a download function, supporting both Python 2 and 3.
     if sys.version_info[0] == 2:
@@ -74,16 +74,12 @@ def _load_mnist():
     X_test = load_mnist_images('t10k-images-idx3-ubyte.gz')
     y_test = load_mnist_labels('t10k-labels-idx1-ubyte.gz')
 
-    # We reserve the last 10000 training examples for validation.
-    X_train, X_val = X_train[:-10000], X_train[-10000:]
-    y_train, y_val = y_train[:-10000], y_train[-10000:]
-
     # We just return all the arrays in order, as expected in main().
     # (It doesn't matter how we do this as long as we can read them again.)
-    return (X_train, y_train), (X_val, y_val), (X_test, y_test)
+    return (X_train, y_train), (X_test, y_test)
 
 
-def load_mnist(batchsize=500, shape=(-1, 28, 28)):
+def load_mnist(batchsize=500):
     """
     Load the MNIST
 
@@ -94,26 +90,14 @@ def load_mnist(batchsize=500, shape=(-1, 28, 28)):
 
     Return
     ------
-        source_data: dict with the separated data
-
+        X: The data (numpy array shape [70 000, 1, 28, 28])
+        y: The labels (numpy array shape [70 000])
     """
-    train_S, val_S, test_S = _load_mnist() # Load the raw MNIST data
+    train_S, test_S = _load_mnist() # Load the raw MNIST data
 
     X_train, y_train = train_S
-    X_val, y_val = val_S
     X_test, y_test = test_S
-    
-    X_train = X_train.reshape(shape)
-    X_val = X_val.reshape(shape)
-    X_test = X_test.reshape(shape)
- 
-    source_data = {
-                    'X_train': X_train,
-                    'y_train': y_train,
-                    'X_val': X_val,
-                    'y_val': y_val,
-                    'X_test': X_test,
-                    'y_test': y_test,
-                    'batchsize': batchsize,
-                    }
-    return source_data
+    X = np.concatenate([X_train, X_test], axis=0)
+    y = np.concatenate([y_train, y_test], axis=0)
+
+    return X, y
