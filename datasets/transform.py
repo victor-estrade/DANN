@@ -3,6 +3,8 @@ from __future__ import division, print_function
 
 import numpy as np
 
+from datasets.utils import Dataset
+
 from sklearn.preprocessing import Normalizer
 np.random.seed(12345)
 
@@ -32,12 +34,13 @@ def diag_dominant(X, y, normalize=False):
     
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
     size = np.prod(X.shape[1:])
     y_t = np.copy(y)
@@ -60,12 +63,13 @@ def random_mat(X, y, normalize=False, random_state=None):
     
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
 
     size = np.prod(X.shape[1:])
@@ -112,12 +116,13 @@ def rotate(X, y, angle=35.):
 
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
 
     y_t = np.copy(y)
@@ -137,12 +142,13 @@ def invert(X, y, pivot=1):
     
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
     y_t = np.copy(y)
     X_t = pivot - X
@@ -163,12 +169,13 @@ def mirror(X, y, shape=(-1,28,28)):
     
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, fliped_dim, etc])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, fliped_dim, etc])
+        y_t: the labels (deep copy of y)
     """
 
     X_t =  np.fliplr(np.copy(X).reshape(shape))
@@ -184,12 +191,13 @@ def random_permut(X, y, random_state=None):
 
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
     y_t = np.copy(y)
 
@@ -202,45 +210,85 @@ def random_permut(X, y, random_state=None):
     X_t = X_t.reshape(-1, np.prod(shape[1:]))
     X_t = X_t[:, permutation].reshape(shape)
     return X_t, y_t
-
-
+    
 # ============================================================================
-#                   Apply a given function
+#                   Grid Bend
 # ============================================================================
 
-def apply_fun(source_data, fun):
+    
+def grid_bend(X, y, nx=10, ny=10, noise=0.3, grid=None):
     """
-    Transform the given dataset by applying an operation to it.
-
-    target_data <- fun(source_data)
+    Transform the given dataset by linear interpolation of a noisy grid.
 
     Params
     ------
-        source_data: a dataset (dict with the separated data)
+        X: The data (numpy array of shape [n_samples, n_features])
+        y: the labels (unused)
 
     Return
     ------
-        target_data: dict with the separated transformed data
-
+        X_t: the transformed data (numpy array of shape [n_samples, n_features])
+        y_t: the labels (deep copy of y)
     """
+    def barycentric_coords(r, r1, r2, r3):
+        """
+        https://en.wikipedia.org/wiki/Barycentric_coordinate_system
+        """
+        x, y = r
+        x1, y1 = r1
+        x2, y2 = r2
+        x3, y3 = r3
+        det_T = (y2-y3)*(x1-x3)+(x3-x2)*(y1-y3)
+        lambda_1 = ((y2-y3)*(x-x3)+(x3-x2)*(y-y3))/det_T
+        lambda_2 = ((y3-y1)*(x-x3)+(x1-x3)*(y-y3))/det_T
+        lambda_3 = 1-lambda_1-lambda_2
+        return lambda_1, lambda_2, lambda_3
 
-    X_train = np.copy(source_data['X_train'])
-    y_train = source_data['y_train']
-    X_val = np.copy(source_data['X_val'])
-    y_val = source_data['y_val']
-    X_test = np.copy(source_data['X_test'])
-    y_test = source_data['y_test']
-    batchsize = source_data['batchsize']
+    if grid is None:
+        x_min, x_max = np.min(X[:, 0]), np.max(X[:, 0])
+        y_min, y_max = np.min(X[:, 1]), np.max(X[:, 1])
+        xx, yy = np.meshgrid(np.linspace(x_min, x_max, num=nx),
+                             np.linspace(y_min, y_max, num=ny))
+        grid = Dataset(xx=xx, yy=yy, nx=nx, ny=ny)
+    # If the grid have
+    if 'xxx' not in grid:
+        grid.xxx = grid.xx + np.random.randn(*grid.xx.shape)*noise*(x_max-x_min)/nx
+    if 'yyy' not in grid:
+        grid.yyy = grid.yy + np.random.randn(*grid.yy.shape)*noise*(y_max-y_min)/ny
 
-    target_data = {
-                'X_train': fun(X_train),
-                'y_train': y_train,
-                'X_val': fun(X_val),
-                'y_val': y_val,
-                'X_test': fun(X_test),
-                'y_test': y_test,
-                'batchsize': batchsize,
-                }
-
-    return target_data
-
+    #
+    news = []
+    for x in X:
+        # Find the triangle
+        xx = grid.xx
+        yy = grid.yy
+        for i in range(xx.shape[1]-1):
+            if x[0] >= xx[0, i] and x[0] <= xx[0, i+1]:
+                break
+        for j in range(yy.shape[0]-1):
+            if x[1] >= yy[j, 0] and x[1] <= yy[j+1, 0]:
+                break
+        # The triangle is :
+        r1 = np.array([grid.xx[j,i], grid.yy[j,i]])
+        r2 = np.array([grid.xx[j,i+1], grid.yy[j+1,i]])
+        r3 = np.array([grid.xx[j,i+1], grid.yy[j,i]])
+        # get the barycentric coords :
+        lambda_1, lambda_2, lambda_3 = barycentric_coords(x, r1, r2, r3)
+        # If it is OK then get the new position of the triangle vertices
+        if 0 <= lambda_1 <= 1 and 0 <= lambda_2 <= 1 and 0 <= lambda_3 <= 1:
+            r1 = np.array([grid.xxx[j,i], grid.yyy[j,i]])
+            r2 = np.array([grid.xxx[j,i+1], grid.yyy[j+1,i]])
+            r3 = np.array([grid.xxx[j,i+1], grid.yyy[j,i]])            
+        else:  # The point is ouside of the triangle. Try the other one
+            r3 = np.array([grid.xx[j,i], grid.yy[j+1,i]])
+            lambda_1, lambda_2, lambda_3 = barycentric_coords(x, r1, r2, r3)
+            r1 = np.array([grid.xxx[j,i], grid.yyy[j,i]])
+            r2 = np.array([grid.xxx[j,i+1], grid.yyy[j+1,i]])
+            r3 = np.array([grid.xxx[j,i], grid.yyy[j+1,i]])            
+        # Add the new position of the data point.
+        news.append(lambda_1*r1 + lambda_2*r2 + lambda_3*r3)
+    
+    # Gather the results and return it
+    X_t = np.array(news)
+    y_t = np.copy(y)
+    return X_t, y_t, grid

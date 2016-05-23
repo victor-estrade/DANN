@@ -118,7 +118,7 @@ def make_circles(n_samples=50, n_classes=5, n_dim=2, noise=1):
     """
     def plouf(n_samples, n_classes, n_dim, noise, p):
         X = np.random.normal(0, 1/n_classes, size=(n_samples, n_dim))
-        norm = p+np.random.uniform(-noise*np.sqrt(1/n_classes), noise*np.sqrt(1/n_classes), size=(n_samples,1))/n_classes
+        norm = (p+np.random.uniform(-noise*np.sqrt(1/n_classes), noise*np.sqrt(1/n_classes), size=(n_samples,1)))/n_classes
         X = X*norm/np.sqrt(np.sum(X**2, axis=1)[:, None])
         return X
 
@@ -128,3 +128,31 @@ def make_circles(n_samples=50, n_classes=5, n_dim=2, noise=1):
     X, y = shuffle_array(X, y)
     return X, y
 
+
+# ============================================================================
+#                   2D-Grid
+# ============================================================================
+
+
+def make_grid(x_min=-2, x_max=2, y_min=-2, y_max=2, nx=10, ny=10):
+    """
+    Simple grid dataset.
+
+    Params
+    ------
+        x_min: (default=-2)
+        x_max: (default=2)
+        y_min: (default=-2)
+        y_max: (default=2)
+        nx: (default=10)
+        ny: (default=10)
+    Return
+    ------
+        X: The data (numpy array shape [n_samples, n_dim])
+        y: The labels (numpy array shape [n_samples])
+    """
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, num=nx),
+                         np.linspace(y_min, y_max, num=ny))
+    X = np.vstack([xx.ravel(), yy.ravel()]).T
+    y = np.hstack([np.ones(nx)*i for i in range(ny)])
+    return X, y
