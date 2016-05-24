@@ -102,6 +102,7 @@ def make_dataset(X, y, batchsize):
                     batchsize: batchsize,
     """
     n_samples = X.shape[0]
+    assert y.shape[0] == n_samples, 'X and y should have the same number of sample X({})!=y({})'.format(X.shape[0], y.shape[0])
     n_train = int(0.6*n_samples)
     n_val = int(0.15*n_samples)+n_train
 
