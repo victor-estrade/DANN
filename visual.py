@@ -36,18 +36,8 @@ def mat(mat, ax=None):
     else:
         fig = ax.get_figure()
     sns.heatmap(mat, cmap=plt.cm.coolwarm, ax=ax)
-    ax.tick_params(
-                axis='x',          # changes apply to the x-axis
-                which='both',      # both major and minor ticks are affected
-                bottom='off',      # ticks along the bottom edge are off
-                top='off',         # ticks along the top edge are off
-                labelbottom='off') # labels along the bottom edge are off
-    ax.tick_params(
-                axis='y',          # changes apply to the y-axis
-                which='both',      # both major and minor ticks are affected
-                bottom='off',      # ticks along the bottom edge are off
-                top='off',         # ticks along the top edge are off
-                labelbottom='off') # labels along the bottom edge are off
+    ax.get_xaxis().set_ticks([])
+    ax.get_yaxis().set_ticks([])
     return fig, ax
 
 
@@ -193,7 +183,7 @@ def source_2D(X, y, ax=None):
         fig = ax.get_figure()
     color = cm.ScalarMappable(cmap=CMAP)
     # y = y / np.linalg.norm(y)
-    ax.scatter(X[:, 0], X[:, 1], label='source', marker='o', s=80, c=color.to_rgba(y))
+    ax.scatter(X[:, 0], X[:, 1], label='source', marker='v', s=80, c=color.to_rgba(y))
     return fig, ax
 
 
@@ -213,7 +203,7 @@ def target_2D(X, y, ax=None):
         fig = ax.get_figure()
     color = cm.ScalarMappable(cmap=CMAP)
     # y = y / np.linalg.norm(y)
-    ax.scatter(X[:, 0], X[:, 1], label='target', marker='v', s=80, c=color.to_rgba(y))
+    ax.scatter(X[:, 0], X[:, 1], label='target', marker='o', s=80, c=color.to_rgba(y))
     return fig, ax
 
 

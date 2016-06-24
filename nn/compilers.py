@@ -203,7 +203,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
     Example:
     --------
     TODO
-    """    
+    """
 
     concat = lasagne.layers.ConcatLayer(layers, axis=0)
     rgl = ReverseGradientLayer(concat, hp_lambda=hp_lambda)
