@@ -252,4 +252,36 @@ def cluster_preprocess(data, trainer, epoch, *args, **kwargs):
     #data['X_train'] = data['X_train'][idx]
     data['preprocess'] = idx
     return idx
-    
+
+
+def align(transp, c_label_src, c_label_tgt):
+    """
+    Return indexes of the chosen target data.
+    then
+    >>> X_S, y_S = X_src, y_src
+    >>> X_T, y_T = X_tgt[align_idx], y_tgt[align_idx]
+    coresponding transp lines and columns = k_means_src.labels_, k_means_tgt.labels_[idx_tgt]
+
+    Params
+    ------
+        transp: the transort matrix
+        c_label_src: the cluster's label which the source data points belong to
+        c_label_tgt: the cluster's label which the target data points belong to
+
+    Return
+    ------
+        align_idx, cluster_T
+    """
+    labels_src = np.unique(c_label_src)
+    labels_tgt = np.unique(c_label_tgt)
+    src_slices = [np.where(c_label_src == l_src)[0] for l_src in labels_src]
+    tgt_slices = [np.where(c_label_tgt == l_tgt)[0] for l_tgt in labels_tgt]
+    # src member of cluster i go to some tgt cluster j 
+    # with the probability in the i-th row of transport matrix
+    cluster_choice = [np.random.choice(len(tgt_slices), size=src_idx.shape, p=transp[i]/np.sum(transp[i])) 
+           for i, src_idx in enumerate(src_slices)]
+    # Stack it into array. And use the former indexes to match X_src with X_tgt[res]
+    cluster_choice_array = np.hstack(cluster_choice)[np.hstack(src_slices)]
+    align_idx = np.array([np.random.choice(tgt_slices[i]) for i in cluster_choice_array])
+    return align_idx, c_label_tgt[align_idx]
+
