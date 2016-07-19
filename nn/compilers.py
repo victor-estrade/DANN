@@ -20,7 +20,7 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('targe
     
     Params
     ------
-        output_layer: the output layer from which the loss and updtaes will be computed
+        output_layer: the output layer from which the loss and updates will be computed
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
         regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
