@@ -44,16 +44,16 @@ def pop_last_line(fname):
     return line
 
 
-def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
+def iterate_minibatches(inputs, targets, batchsize, shuffle=True):
     """
     Helper function interating over the given inputs
 
     Params
     ------
         inputs: the data (numpy array or tuple of numpy array)
-        targets: the target values (numpy array)
+        targets: the target values (numpy array or tuple of numpy array)
         batchsize: the batch size (int)
-        shuffle (default=False): whether or not the data should be shuffled
+        shuffle (default=True): whether or not the data should be shuffled
     
     Return
     ------
