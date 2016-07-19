@@ -124,10 +124,11 @@ def learning_curve(stats, regex='acc', title=''):
         return None, None
 
 
-def bound(X, y, predict_fn, ax=None):
+def bound(X, y, predict_fn, ax=None, class_idx=1):
     """
     Plot the bounds of a 2D dataset (X,y) given a probability prediction
     function.
+    (Only binary problems)
     
     Params
     ------
@@ -135,6 +136,7 @@ def bound(X, y, predict_fn, ax=None):
         y: the true labels
         predict_fn: the probability prediction function
         ax: (default=None) the axes
+        class_idx: (default=1) the class probability used to get the proba heatmap
     Return
     ------
         fig: the figure
@@ -152,15 +154,15 @@ def bound(X, y, predict_fn, ax=None):
     xx, yy = np.meshgrid(np.arange(x_min, x_max, .02),
                          np.arange(y_min, y_max, .02))
     Z = predict_fn(np.c_[xx.ravel(), yy.ravel()])
-    Z = np.array(Z)[0, :, 1]
+    Z = np.array(Z)[0, :, class_idx]
     # Put the result into a color plot
     Z = Z.reshape(xx.shape)
     ax.contourf(xx, yy, Z, cmap=cm_heat, alpha=.8)
 
     # Plot also the training points
-    ax.scatter(X[:, 0], X[:, 1], c=y, cmap=color)
-    ax.xlim(xx.min(), xx.max())
-    ax.ylim(yy.min(), yy.max())
+    ax.scatter(X[:, 0], X[:, 1], c=color.to_rgba(y))
+    ax.set_xlim(xx.min(), xx.max())
+    ax.set_ylim(yy.min(), yy.max())
     return fig, ax
 
 # ============================================================================
