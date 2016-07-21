@@ -28,7 +28,6 @@ def get_input_vars(out_layer):
     return input_vars
 
 
-# TODO :
 def classification_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('target'),
                         regularization=None, reg_param=0.1): 
     """
@@ -39,6 +38,7 @@ def classification_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('tar
     Params
     ------
         output_layer: the output layer from which the loss and updates will be computed
+        target_var : (default=T.ivector('target')) the target symbolic variable
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
         regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
@@ -55,10 +55,10 @@ def classification_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('tar
 
     Example:
     --------
-    >>> funs = compiler_sgd_mom(output_layer, lr=0.01, mom=0.1)
-    >>> loss, acc = funs.train(X, y)
+    >>> funs = classification_sgd_mom(output_layer, lr=0.01, mom=0.1)
+    >>> loss, acc = funs['train'](X, y)
     """
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
@@ -81,7 +81,7 @@ def classification_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.ivector('tar
     acc = T.mean(T.eq(T.argmax(pred, axis=1), target_var))
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training loss:
-    train_function = theano.function([input_var, target_var], [loss, acc], 
+    train_function = theano.function(input_vars+[target_var], [loss, acc], 
         updates=updates, allow_input_downcast=True)
 
     return {
@@ -102,6 +102,7 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('target
     Params
     ------
         output_layer: the output layer from which the loss and updates will be computed
+        target_var : (default=T.matrix('target')) the target symbolic variable
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
         regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
@@ -118,12 +119,12 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('target
 
     Example:
     --------
-    >>> funs = compiler_sgd_mom(output_layer, lr=0.01, mom=0.1)
-    >>> loss = funs.train(X, y)
+    >>> funs = crossentropy_sgd_mom(output_layer, lr=0.01, mom=0.1)
+    >>> loss = funs['train'](X, y)
     
     """
 
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
@@ -144,7 +145,7 @@ def crossentropy_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('target
 
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training loss:
-    train_function = theano.function([input_var, target_var], [loss], 
+    train_function = theano.function(input_vars+[target_var], [loss], 
         updates=updates, allow_input_downcast=True)
 
     return {
@@ -163,6 +164,7 @@ def crossentropy_validation(output_layer, target_var=T.matrix('target')):
     Params
     ------
         output_layer: the output layer from which the loss and updates will be computed
+        target_var : (default=T.matrix('target')) the target symbolic variable
 
     Return
     ------
@@ -172,16 +174,18 @@ def crossentropy_validation(output_layer, target_var=T.matrix('target')):
 
     Example:
     --------
-    
+    >>> funs = crossentropy_validation(output_layer)
+    >>> loss = funs['valid'](X, y)
+
     """    
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
     # disabling dropout and noise layers.
     pred = lasagne.layers.get_output(output_layer, deterministic=True)
     loss = T.mean(lasagne.objectives.categorical_crossentropy(pred, target_var))
     # Compile a second function computing the validation loss and accuracy:
-    valid_function = theano.function([input_var, target_var], [loss,], allow_input_downcast=True)
+    valid_function = theano.function(input_vars+[target_var], [loss,], allow_input_downcast=True)
     return {
             'valid': valid_function,
             'valid_description': ('loss',),
@@ -197,6 +201,7 @@ def classification_validation(output_layer, target_var=T.ivector('target')):
     Params
     ------
         output_layer: the output layer from which the loss and updates will be computed
+        target_var : (default=T.ivector('target')) the target symbolic variable
 
     Return
     ------
@@ -206,9 +211,11 @@ def classification_validation(output_layer, target_var=T.ivector('target')):
 
     Example:
     --------
-    
+    >>> funs = classification_validation(output_layer)
+    >>> loss, acc = funs['valid'](X, y)
+
     """    
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
     # disabling dropout and noise layers.
@@ -219,7 +226,7 @@ def classification_validation(output_layer, target_var=T.ivector('target')):
     # As a bonus, also create an expression for the classification accuracy:
     acc = T.mean(T.eq(label, target_var))
     # Compile a second function computing the validation loss and accuracy:
-    valid_function = theano.function([input_var, target_var], [loss, acc], allow_input_downcast=True)
+    valid_function = theano.function(input_vars+[target_var], [loss, acc], allow_input_downcast=True)
 
     return {
             'valid': valid_function,
@@ -245,9 +252,10 @@ def argmax_prediction(output_layer):
 
     Example:
     --------
-    
+    >>> funs = argmax_prediction(output_layer)
+    >>> labels = funs['argmax'](X)
     """    
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
     # disabling dropout and noise layers.
@@ -255,7 +263,7 @@ def argmax_prediction(output_layer):
     # As a bonus, also create an expression for the classification:
     label = T.argmax(pred, axis=1)
     # Compile a function computing the predicted labels:
-    predict_function = theano.function([input_var], [label], allow_input_downcast=True)
+    predict_function = theano.function(input_vars, [label], allow_input_downcast=True)
 
     return {
             'predict': predict_function,
@@ -281,15 +289,17 @@ def output(output_layer):
 
     Example:
     --------
-    
+    >>> funs = output(output_layer)
+    >>> raw_output = funs['output'](X)
+
     """    
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create an expression for the output of the layer. The crucial difference
     # here is that we do a deterministic forward pass through the network,
     # disabling dropout and noise layers.
     pred = lasagne.layers.get_output(output_layer, deterministic=True)
     # Compile an output function
-    output_function = theano.function([input_var], [pred], allow_input_downcast=True)
+    output_function = theano.function(input_vars, [pred], allow_input_downcast=True)
 
     return {
             'output': output_function,
@@ -307,6 +317,7 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
     Params
     ------
         output_layer: the output layer from which the loss and updtaes will be computed
+        target_var : (default=T.matrix('target')) the target symbolic variable
         lr: (default=1) learning rate.
         mom: (default=0.9) momentum.
         regularisation: (default=None) the regularization, can be 'l1' or 'l2' or None.
@@ -324,9 +335,10 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
     Example:
     --------
     >>> funs = squared_error_sgd_mom(output_layer, lr=0.01, mom=0.1)
+    >>> loss = funs['train'](X, y)
     
     """
-    input_var = lasagne.layers.get_all_layers(output_layer)[0].input_var
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for training, i.e., a scalar objective we want
     # to minimize (for our multi-class problem, it is the cross-entropy loss):
     pred = lasagne.layers.get_output(output_layer)
@@ -347,7 +359,7 @@ def squared_error_sgd_mom(output_layer, lr=1, mom=.9, target_var=T.matrix('targe
 
     # Compile a function performing a training step on a mini-batch (by giving
     # the updates dictionary) and returning the corresponding training loss:
-    train_function = theano.function([input_var, target_var], [loss], 
+    train_function = theano.function(input_vars+[target_var], [loss], 
         updates=updates, allow_input_downcast=True)
 
     return {
@@ -367,6 +379,7 @@ def squared_error_validation(output_layer, target_var=T.matrix('target')):
     Params
     ------
         output_layer: the output layer from which the loss and updtaes will be computed
+        target_var : (default=T.matrix('target')) the target symbolic variable
 
     Return
     ------
@@ -376,15 +389,18 @@ def squared_error_validation(output_layer, target_var=T.matrix('target')):
 
     Example:
     --------
-    
+    >>> funs = squared_error_validation(output_layer)
+    >>> loss = funs['valid'](X, y)
+
     """
+    input_vars = get_input_vars(output_layer)
     # Create a loss expression for validation/testing. The crucial difference
     # here is that we do a deterministic forward pass through the network,
     # disabling dropout and noise layers.
     pred = lasagne.layers.get_output(output_layer, deterministic=True)
     loss = T.mean(lasagne.objectives.squared_error(pred, target_var))
     # Compile a second function computing the validation loss and accuracy:
-    valid_function = theano.function([input_var, target_var], [loss,], allow_input_downcast=True)
+    valid_function = theano.function(input_vars+[target_var], [loss,], allow_input_downcast=True)
     
     return {
             'valid': valid_function,
