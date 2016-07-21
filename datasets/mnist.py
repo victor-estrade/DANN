@@ -79,14 +79,9 @@ def _load_mnist():
     return (X_train, y_train), (X_test, y_test)
 
 
-def load_mnist(batchsize=500):
+def load_mnist():
     """
-    Load the MNIST
-
-    Params
-    ------
-        batchsize: (default=500) the batch size.
-        shape : (default=(-1, 28, 28)) the shape of the image arrays.
+    Load the MNIST dataset
 
     Return
     ------
