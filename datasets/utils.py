@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.preprocessing import Normalizer
 np.random.seed(12345)
 
-# this class is what I use for every thing when I need to gather several 
+# This class is what I use for every thing when I need to gather several 
 # things at the same place.
 # Yes ! I do not care at all that it is dirty coding !
 class AttributeDict(dict):
@@ -51,7 +51,7 @@ class AttributeDict(dict):
 AD = AttributeDict
 Dataset = AttributeDict
 
-
+# "Everyday i'm shuffling !"
 def shuffle_array(*args):
     """
     Shuffle the given data. Keeps the relative associations arr_j[i] <-> arr_k[i].
@@ -77,7 +77,7 @@ def shuffle_array(*args):
     # Return shuffled arrays
     return tuple(arr[indices] for arr in args)
 
-
+# TODO : Add params to control train-vaild-test split
 def make_dataset(X, y, batchsize):
     """
     Build a dictionnay dataset from the given arrays
@@ -152,7 +152,7 @@ def make_domain_dataset(datasets):
 
     return domain_data
 
-
+# TODO : Switch between source and target ...
 def make_corrector_dataset(source_data, target_data):    
     """
     Make a corrector datasets out of the given datasets.
