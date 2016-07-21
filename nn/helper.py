@@ -67,12 +67,156 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=True):
             excerpt = slice(start_idx, start_idx + batchsize)
         yield tuple(arr[excerpt] for arr in data)
 
+
+
+class NN(object):
+    """
+    Access the compiled functions :
+    >>> nn[]
+    """
+    def __init__(self, end_layer, name='anonymous NN', logger=None):
+        self.name = name
+        self.end_layer = end_layer
+        self.funs = AttributeDict()
+        self.global_stats = AttributeDict()
+        self.epoch_count = 0
+        if logger is None:
+            self.logger = empty_logger()
+        else:
+            self.logger = logger
+
+    def compile(self, compiler, **kwargs):
+        """
+        Compile the output layer whose name is given.
+        """
+        funs = AttributeDict(compiler(self.end_layer, **kwargs))
+        # funs is a dict containing compiled functions (train, valid, predict, etc)
+        self.funs.update(funs)
+
+
+    def _training_epoch(self, data):
+        """
+        Should do one epoch of training
+        """
+        epoch_stats = {'training '+stat_name:[] 
+                       for stat_name in self.funs.train_description}
+        # Training : (forward and backward propagation)
+        # done with the iterative functions
+        minibatches = iterate_minibatches(data['X_train'], data['y_train'], data['batchsize'], shuffle=True)
+        # We train minibatch after minibatch
+        for batch in minibatches:
+            results = self.funs.train(*batch)
+            # The first should be the loss
+            # the second be accuracy
+            for res, stat_name in zip(results, self.funs.train_description):
+                epoch_stats['training '+stat_name].append(res)
+        return epoch_stats
+
+    def _validation_epoch(self, data):
+        """
+        Should do a validation epoch
+        """
+        epoch_stats = {'validation '+stat_name:[] 
+                       for stat_name in self.funs.valid_description}
+        # Training : (forward and backward propagation)
+        # done with the iterative functions
+        minibatches = iterate_minibatches(data['X_train'], data['y_train'], data['batchsize'], shuffle=True) 
+        # We feed each part alternatively minibatch after minibatch
+        for batch in minibatches:
+            results = self.funs.valid(*batch)
+            # The first should be the loss
+            # the second be accuracy
+            for res, stat_name in zip(results, self.funs.valid_description):
+                epoch_stats['validation '+stat_name].append(res)
+        return epoch_stats
+
+    def train(self, data, num_epochs=20):
+        """
+        The train fuction (for the user)
+        """
+        # Init the stats of this training session.
+        session_stats = {}
+        # Prepare the empty lists that will recieve the stats' mean for each epoch
+        session_stats.update({'training '+s:[] 
+                 for s in self.funs.train_description})
+        # Prepare the empty lists that will recieve the stats' mean for each epoch
+        session_stats.update({'validation '+s:[] 
+                 for s in self.funs.valid_description})
+
+        for epoch in range(num_epochs):
+            # We mesure the time it takes.
+            # It helps to know how much time the code needs at runtime
+            start_time = time.time()
+            # Do the training (forward & backward on minibatches)
+            train_stats = self._training_epoch(data)
+            # Do the validation (forward & validation mesures on minibatches)
+            valid_stats = self._validation_epoch(data)
+            # Print time elapsed
+            self.logger.info("Epoch {} of {} took {:.3f}s".format(
+                self.epoch_count+epoch+1, self.epoch_count+num_epochs, time.time() - start_time))
+
+            # Update the final_stats with the mean of the epoch stats
+            for stat_name, stat_value in sorted(train_stats.items()):
+                if stat_value:
+                    mean_value = np.mean(stat_value)
+                    self.logger.info('   {:30} : {:.6f}'.format(stat_name, mean_value))
+                    session_stats[stat_name].append(mean_value)
+            for stat_name, stat_value in sorted(valid_stats.items()):
+                if stat_value:
+                    mean_value = np.mean(stat_value)
+                    self.logger.info('   {:30} : {:.6f}'.format(stat_name, mean_value))
+                    session_stats[stat_name].append(mean_value)
+        
+        for stat_name, stat_value in session_stats.items():
+            if stat_name in self.global_stats:
+                self.global_stats[stat_name].extend(stat_value)
+            else:
+                self.global_stats[stat_name] = stat_value
+        self.epoch_count += num_epochs
+        return self
+
+    def train_only(self, data, num_epochs=20):
+        """
+        The train fuction (for the user)
+        """
+        # Init the stats of this training session.
+        session_stats = {}
+        # Prepare the empty lists that will recieve the stats' mean for each epoch
+        session_stats.update({'training '+s:[] 
+                 for s in self.funs.train_description})
+
+        for epoch in range(num_epochs):
+            # We mesure the time it takes.
+            # It helps to know how much time the code needs at runtime
+            start_time = time.time()
+            # Do the training (forward & backward on minibatches)
+            train_stats = self._training_epoch(data)
+            # Print time elapsed
+            self.logger.info("Epoch {} of {} took {:.3f}s".format(
+                self.epoch_count+epoch+1, self.epoch_count+num_epochs, time.time() - start_time))
+
+            # Update the final_stats with the mean of the epoch stats
+            for stat_name, stat_value in sorted(train_stats.items()):
+                if stat_value:
+                    mean_value = np.mean(stat_value)
+                    self.logger.info('   {:30} : {:.6f}'.format(stat_name, mean_value))
+                    session_stats[stat_name].append(mean_value)
+
+        for stat_name, stat_value in session_stats.items():
+            if stat_name in self.global_stats:
+                self.global_stats[stat_name].extend(stat_value)
+            else:
+                self.global_stats[stat_name] = stat_value
+        self.epoch_count += num_epochs
+        return self
+
+
 class CNN(object):
     """
     Access the compiled functions :
     >>> nn[]
     """
-    def __init__(self, name='anonymous NN', logger=None):
+    def __init__(self, name='anonymous CNN', logger=None):
         self.name = name
         self.end_layers = AttributeDict()
         self.parts = AttributeDict()
@@ -107,8 +251,12 @@ class CNN(object):
         """
         if name in self.end_layers:
             funs = AttributeDict(compiler(self.end_layers[name], **kwargs))
-            # funs is a dict containing compiled functions (train, valid, predict, etc)
-            self.parts[name] = funs
+            if name in self.parts:
+                # funs is a dict containing compiled functions (train, valid, predict, etc)
+                self.parts[name].update(funs)
+            else:
+                self.parts[name] = funs
+
         else:
             raise AttributeError("No such output layer: " + name)
 
@@ -193,6 +341,43 @@ class CNN(object):
                     self.logger.info('   {:30} : {:.6f}'.format(stat_name, mean_value))
                     session_stats[stat_name].append(mean_value)
         
+        for stat_name, stat_value in session_stats.items():
+            if stat_name in self.global_stats:
+                self.global_stats[stat_name].extend(stat_value)
+            else:
+                self.global_stats[stat_name] = stat_value
+        self.epoch_count += num_epochs
+        return self
+
+
+    def train_only(self, datas, names, num_epochs=20):
+        """
+        The train fuction (for the user)
+        """
+        # Init the stats of this training session.
+        session_stats = {}
+        # Prepare the empty lists that will recieve the stats' mean for each epoch
+        session_stats.update({name+' training '+s:[] 
+                 for name in names 
+                 for s in self.parts[name].train_description})
+
+        for epoch in range(num_epochs):
+            # We mesure the time it takes.
+            # It helps to know how much time the code needs at runtime
+            start_time = time.time()
+            # Do the training (forward & backward on minibatches)
+            train_stats = self._training_epoch(datas, names)
+            # Print time elapsed
+            self.logger.info("Epoch {} of {} took {:.3f}s".format(
+                self.epoch_count+epoch+1, self.epoch_count+num_epochs, time.time() - start_time))
+
+            # Update the final_stats with the mean of the epoch stats
+            for stat_name, stat_value in sorted(train_stats.items()):
+                if stat_value:
+                    mean_value = np.mean(stat_value)
+                    self.logger.info('   {:30} : {:.6f}'.format(stat_name, mean_value))
+                    session_stats[stat_name].append(mean_value)
+
         for stat_name, stat_value in session_stats.items():
             if stat_name in self.global_stats:
                 self.global_stats[stat_name].extend(stat_value)
