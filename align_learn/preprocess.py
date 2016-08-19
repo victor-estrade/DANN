@@ -260,7 +260,7 @@ def align(transp, c_label_src, c_label_tgt):
     then
     >>> X_S, y_S = X_src, y_src
     >>> X_T, y_T = X_tgt[align_idx], y_tgt[align_idx]
-    coresponding transp lines and columns = k_means_src.labels_, k_means_tgt.labels_[idx_tgt]
+    coresponding transport lines and columns = k_means_src.labels_, k_means_tgt.labels_[idx_tgt]
 
     Params
     ------
