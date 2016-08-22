@@ -283,7 +283,7 @@ class CNN(object):
 
     def _validation_epoch(self, datas, names):
         """
-        Should do a validation epoch
+        Should do one validation epoch
         """
         epoch_stats = {name+' validation '+stat_name:[] 
                        for name in names 
