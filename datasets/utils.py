@@ -168,13 +168,13 @@ def make_corrector_dataset(source_data, target_data):
     # Note to self : 
     #   You should still use the incomming datasets as if they were simple dictionaries
     #   In order to prevent breaking the old working codes
-    corrector_data = Dataset(target_data)
+    corrector_data = Dataset(source_data)
     corrector_data.update({
-        'y_train': source_data['X_train'],
-        'y_val': source_data['X_val'],
-        'y_test': source_data['X_test'],
-        'labels': source_data['y_train'],
-        'batchsize': source_data['batchsize'],
+        'y_train': target_data['X_train'],
+        'y_val': target_data['X_val'],
+        'y_test': target_data['X_test'],
+        'labels': target_data['y_train'],
+        'batchsize': target_data['batchsize'],
         })
     return corrector_data
 

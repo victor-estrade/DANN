@@ -408,8 +408,8 @@ def squared_error_validation(output_layer, target_var=T.matrix('target')):
            }
 
 
-def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
-                        regularization=None, reg_param=0.1): 
+def adversarial(input_layers, output_layer=None, lr=1, mom=.9,
+                        regularization=None, reg_param=0.1, hp_lambda=1.): 
     """
     Stochastic Gradient Descent adversarial block compiler with optionnal momentum.
 
@@ -443,18 +443,16 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
     --------
     TODO
     """
+    if output_layer is None:
+        concat = lasagne.layers.ConcatLayer(input_layers, axis=0)
+        rg_layer = ReverseGradientLayer(concat, hp_lambda=hp_lambda)
+        adv_output = lasagne.layers.DenseLayer(rg_layer, len(input_layers), 
+            nonlinearity=lasagne.nonlinearities.softmax,)
 
-    concat = lasagne.layers.ConcatLayer(layers, axis=0)
-    rgl = ReverseGradientLayer(concat, hp_lambda=hp_lambda)
-    output_layer = lasagne.layers.DenseLayer(
-                    rgl,
-                    num_units=len(layers),
-                    nonlinearity=lasagne.nonlinearities.softmax,
-                    )
 
     input_vars = get_input_vars(output_layer)
-    true_domains = [np.ones(lasagne.layers.get_all_layers(layer)[0].shape[0], dtype=np.int32)*i 
-                        for i, layer in enumerate(layers)]
+    true_domains = [np.ones(layer.output_shape[0], dtype=np.int32)*i 
+                        for i, layer in enumerate(input_layers)]
     true_domains = np.hstack(true_domains)
     
     # Create a loss expression for training, i.e., a scalar objective we want
@@ -476,7 +474,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
     updates = lasagne.updates.apply_momentum(updates, params, momentum=mom)
 
     # As a bonus, also create an expression for the classification accuracy:
-    n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in layers])
+    n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in input_layers])
     accs = [T.mean(T.eq(T.argmax(pred[n:m], axis=1), true_domains[n:m])) 
             for n, m in zip(n_samples[:-1],n_samples[1:])]
     # acc = T.mean(T.eq(T.argmax(pred, axis=1), true_domains))
@@ -494,7 +492,7 @@ def adversarial(layers, hp_lambda=1, lr=1, mom=.9,
     # As a bonus, also create an expression for the classification:
     label = T.argmax(pred, axis=1)
     # As a bonus, also create an expression for the classification accuracy:
-    # n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in layers])
+    # n_samples = np.cumsum([0]+[lasagne.layers.get_all_layers(layer)[0].shape[0] for layer in input_layers])
     accs = [T.mean(T.eq(T.argmax(pred[n:m], axis=1), true_domains[n:m])) 
             for n, m in zip(n_samples[:-1],n_samples[1:])]
     # acc = T.mean(T.eq(label, true_domains))
