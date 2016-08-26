@@ -194,7 +194,17 @@ def exhaustive_clostest(data, trainer, epoch, *args, **kwargs):
 
 def build_clusters(X, y, n_clusters=10):
     """
-
+	
+	Params
+	------
+		X:
+		y:
+		n_clusters: (default=10)
+	Return
+	------
+		centers_array :
+		clusters_label :
+		centers_labels :
     Example
     -------
     >>> X = corrector_data['X_train']
@@ -222,7 +232,6 @@ def build_clusters(X, y, n_clusters=10):
     centers_array = np.vstack(centers)
     centers_labels = np.hstack(labels)
     return centers_array, clusters_label, centers_labels
-
 
 
 def cluster_preprocess(data, trainer, epoch, *args, **kwargs):
